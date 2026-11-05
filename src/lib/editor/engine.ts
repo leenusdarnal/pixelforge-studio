@@ -339,5 +339,5 @@ window.addEventListener('message',async event=>{
 function boot(){drawSample();setTool('move');$('saveState').textContent='Local editing';requestAnimationFrame(()=>fitCanvas());}
 boot();
 if(window.parent!==window)window.parent.postMessage({type:'PIXELFORGE_READY'},location.origin);else requestAnimationFrame(()=>window.dispatchEvent(new Event('pixelforge:ready')));
-}})();
+})();
 }
