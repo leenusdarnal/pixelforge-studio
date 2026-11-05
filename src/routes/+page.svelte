@@ -133,7 +133,8 @@
   }
 
   function captureCurrentProject(): Promise<ProjectSnapshot> {
-    if (!editorFrame?.contentWindow) return Promise.reject(new Error('The editor is not ready.'));
+    const frameWindow = editorFrame?.contentWindow;
+    if (!frameWindow) return Promise.reject(new Error('The editor is not ready.'));
     return new Promise((resolve, reject) => {
       const timeout = window.setTimeout(() => {
         pendingStateCapture = null;
@@ -143,7 +144,7 @@
         window.clearTimeout(timeout);
         resolve(project);
       };
-      editorFrame.contentWindow.postMessage({ type: 'PIXELFORGE_REQUEST_STATE' }, window.location.origin);
+      frameWindow.postMessage({ type: 'PIXELFORGE_REQUEST_STATE' }, window.location.origin);
     });
   }
 
@@ -224,7 +225,7 @@
 
 <main class="relative h-dvh min-h-[320px] w-screen overflow-hidden bg-[#17191d]">
   <iframe bind:this={editorFrame} src="/legacy/index.html" title="PixelForge Studio image editor"
-    class="block h-full w-full border-0 bg-[#17191d]" referrerpolicy="same-origin" />
+    class="block h-full w-full border-0 bg-[#17191d]" referrerpolicy="same-origin"></iframe>
 
   <div class="pointer-events-none fixed bottom-[34px] left-3 z-40 max-w-[calc(100vw-24px)] rounded-lg border border-white/10 bg-[#202329]/95 px-3 py-2 text-[11px] text-slate-300 shadow-xl backdrop-blur"
     role="status" aria-live="polite">
