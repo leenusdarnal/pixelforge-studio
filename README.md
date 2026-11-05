@@ -1,4 +1,4 @@
-# PixelForge Studio 2.3
+# PixelForge Studio 2.4
 
 A mobile-friendly, offline-first image editor with layers, masks, selection tools, filters and editable .pfs project files.
 
@@ -36,7 +36,7 @@ The GitHub repository is connected to Vercel. Push or merge to main to trigger a
 
 ## Existing editor migration
 
-The v2.2 editor is preserved in static/legacy/index.html and hosted inside the SvelteKit application while its UI and image operations are migrated into Svelte components and editor modules in stages. This compatibility layer keeps existing tools available; it is not the final component architecture.
+The editor now renders directly in SvelteKit through `src/lib/editor/EditorWorkbench.svelte`; it no longer runs in an iframe. Its presentation markup, styles and runtime are separated into dedicated files, and autosave/recovery communicate through same-window events. The editing runtime is still a transitional consolidated module; layer, tool, filter and history internals will be split into smaller feature modules in subsequent migration slices. The previous iframe page remains in `static/legacy/` temporarily as a rollback reference and is not loaded by the application.
 
 ## Text layers
 
@@ -71,9 +71,9 @@ This is a guardrail, not a guarantee that every device can safely handle every 2
 
 1. Project safety, history and autosave.
 2. Mobile layout and accessibility.
-3. Modular SvelteKit + Tailwind architecture.
+3. Modular SvelteKit + Tailwind architecture (in progress).
 4. Selection masks, transform and editable text.
 5. Background filters, rendering improvements and HiDPI support.
 6. Export, PWA polish and open-source release preparation.
 
-Advanced text effects, adjustment layers, cloud sync and collaboration are outside the v2.3 scope.
+Advanced text effects, adjustment layers, cloud sync and collaboration are outside the v2.4 scope.
