@@ -1,1 +1,0 @@
-GitHub App installation verified. PixelForge Studio 2.2 core PWA files are present in this repository: index.html, manifest.webmanifest, sw.js, README.md.

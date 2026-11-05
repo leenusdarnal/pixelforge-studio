@@ -1,10 +1,10 @@
 {
-  "id": "./",
+  "id": "/",
   "name": "PixelForge Studio — Image Editor",
   "short_name": "PixelForge",
-  "description": "Touch-friendly layer-based image editor with offline support.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "description": "An offline-first image editor. Projects and autosaves stay on this device.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#17191d",
@@ -16,7 +16,7 @@
   ],
   "icons": [
     {
-      "src": "./icons/icon.svg",
+      "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

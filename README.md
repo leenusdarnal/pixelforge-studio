@@ -1,32 +1,75 @@
-# PixelForge Studio 2.2 — Mobile PWA
+# PixelForge Studio 2.3
 
-A touch-friendly, layer-based image editor that runs in a modern browser and can be installed as a Progressive Web App.
+A mobile-friendly, offline-first image editor with layers, masks, selection tools, filters and editable .pfs project files.
 
-## Deploy with GitHub Pages
+PixelForge is an open-source project under the **MIT License**. It runs in the browser and keeps artwork and autosaves on the user's device. The application does not provide cloud sync or upload artwork to a remote service.
 
-1. Open **Settings → Pages** in this repository.
-2. Under **Build and deployment**, choose **Deploy from a branch**.
-3. Select branch **main** and folder **/(root)**, then save.
-4. After GitHub Pages finishes deploying, open the published HTTPS URL on your phone.
-5. On Android, use the browser's **Install app** / **Add to Home screen** option. On iPhone/iPad, use Safari's **Share → Add to Home Screen**.
+## Development stack
 
-## Use
+- SvelteKit and Svelte 5
+- TypeScript
+- Tailwind CSS 4
+- HTML Canvas API
+- Web Workers for background image processing
+- IndexedDB for local autosave and recovery
+- Vercel for hosting and deployment
 
-- Open or import an image from your device.
-- Use the bottom tool strip for touch-friendly editing tools.
-- Pinch with two fingers to zoom and pan.
-- Tap **Panels** to open Layers, Adjust, and History.
-- Export a flattened image or save an editable project file.
+## Run locally
 
-## Offline use
+Requirements: Node.js 20 or newer and npm.
 
-The service worker caches the editor shell and app icons after the first successful online visit. Artwork and project files remain in the browser unless explicitly exported; the app does not upload artwork to a server.
+    npm install
+    npm run dev
+
+## Checks
+
+    npm run check
+    npm test
+    npm run build
+    npm run smoke
+
+The CI workflow runs these checks for pull requests and pushes to main.
+
+## Deploy to Vercel
+
+The GitHub repository is connected to Vercel. Push or merge to main to trigger a production deployment. Vercel should detect SvelteKit and use the included Vercel adapter. Keep the project root at the repository root and use npm run build.
+
+## Existing editor migration
+
+The v2.2 editor is preserved in static/legacy/index.html and hosted inside the SvelteKit application while its UI and image operations are migrated into Svelte components and editor modules in stages. This compatibility layer keeps existing tools available; it is not the final component architecture.
+
+## Local storage and recovery
+
+- Autosaves are stored in IndexedDB on the current device.
+- The latest autosave and up to three recovery copies are retained.
+- No account or cloud sync is required.
+- Browser storage can be cleared by the user or removed by the browser. Export a .pfs file for a separate backup.
+- Browser storage quotas vary by device.
+
+## Image size target
+
+The initial image target is **24 megapixels**, with a maximum document side of 6,000 pixels. Imported images above the target are scaled down proportionally. New documents, resizes and project files above the target are rejected.
+
+This is a guardrail, not a guarantee that every device can safely handle every 24 MP project. Layer count, masks, browser memory and available device resources affect performance.
 
 ## Project files
 
-- `index.html` — PixelForge Studio 2.2 editor
-- `manifest.webmanifest` — install metadata and app icons
-- `sw.js` — service worker and offline app-shell cache
-- `icons/` — PWA icons
+- src/routes/ — SvelteKit application routes
+- src/lib/editor/ — reusable editor utilities
+- src/service-worker.ts — offline app-shell and update cache
+- static/legacy/ — temporary compatibility editor during migration
+- static/manifest.webmanifest — PWA metadata
+- static/icons/ — app icons
+- tests/ — automated unit tests
+- scripts/smoke.mjs — project smoke checks
 
-This is a browser-based image editor, not a full Photoshop replacement; it does not add native PSD/PSB support.
+## Roadmap
+
+1. Project safety, history and autosave.
+2. Mobile layout and accessibility.
+3. Modular SvelteKit + Tailwind architecture.
+4. Selection masks, transform and editable text.
+5. Background filters, rendering improvements and HiDPI support.
+6. Export, PWA polish and open-source release preparation.
+
+Advanced text effects, adjustment layers, cloud sync and collaboration are outside the v2.3 scope.
