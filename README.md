@@ -38,6 +38,10 @@ The GitHub repository is connected to Vercel. Push or merge to main to trigger a
 
 The v2.2 editor is preserved in static/legacy/index.html and hosted inside the SvelteKit application while its UI and image operations are migrated into Svelte components and editor modules in stages. This compatibility layer keeps existing tools available; it is not the final component architecture.
 
+## Text layers
+
+Text layers support basic editable metadata: content, font family, size, weight, colour, alignment, opacity and line spacing. Their settings are included in project snapshots and local autosaves. Painting, filters, masks, cropping and geometric transforms rasterize the text so the visual result remains consistent; duplicate a text layer first to keep an editable copy before applying those operations.
+
 ## Local storage and recovery
 
 - Autosaves are stored in IndexedDB on the current device.

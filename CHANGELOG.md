@@ -16,4 +16,4 @@
 - Updated PWA metadata and project documentation.
 - Added the MIT licence.
 
-This is a migration foundation. Selection-mask redesign, non-destructive transforms, editable text layers, worker filters and dirty-region rendering remain future roadmap work.
+This is a migration foundation. Selection-mask redesign, non-destructive transforms, worker filters and dirty-region rendering remain future roadmap work.
