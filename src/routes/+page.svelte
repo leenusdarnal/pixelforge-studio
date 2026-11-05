@@ -224,7 +224,7 @@
 </script>
 
 <svelte:head>
-  <title>PixelForge Studio 2.3 — Image Editor</title>
+  <title>PixelForge Studio 2.4 — Image Editor</title>
   <meta name="description" content="A mobile-friendly, offline-first image editor with layers, masks and local project recovery." />
 </svelte:head>
 
