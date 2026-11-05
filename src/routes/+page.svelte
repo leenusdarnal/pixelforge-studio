@@ -1,76 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import EditorWorkbench from '$lib/editor/EditorWorkbench.svelte';
-  type ProjectSnapshot = { format: 'PixelForgeProject'; version: number; w: number; h: number; name: string; activeId: string | null; layers: unknown[]; [key: string]: unknown };
-  type RecoveryRecord = { id: string; savedAt: number; project: ProjectSnapshot };
+  import { getCurrentRecovery, persistProject } from '$lib/editor/storage';
+  import { isProjectSnapshot, type ProjectSnapshot, type RecoveryRecord } from '$lib/editor/project';
   let saveStatus = $state('Starting editor…');
   let recovery = $state<RecoveryRecord | null>(null);
   let recoveryError = $state('');
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let latestProject: ProjectSnapshot | null = null;
-  let database: Promise<IDBDatabase> | null = null;
   let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
   let updateAvailable = $state(false);
   let updateBusy = $state(false);
   let updateError = $state('');
   let pendingStateCapture: ((project: ProjectSnapshot) => void) | null = null;
   let reloadAfterControllerChange = false;
-  const DB_NAME = 'pixelforge-studio-local';
-  const STORE_NAME = 'snapshots';
-
-  function openDatabase(): Promise<IDBDatabase> {
-    if (database) return database;
-    database = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, 1);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error ?? new Error('Could not open local storage.'));
-      request.onblocked = () => reject(new Error('Local storage upgrade is blocked by another tab.'));
-    });
-    return database;
-  }
-
-  function requestResult<T>(request: IDBRequest<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error ?? new Error('Local storage request failed.'));
-    });
-  }
-
-  async function getCurrentRecovery(): Promise<RecoveryRecord | null> {
-    const db = await openDatabase();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    return (await requestResult(tx.objectStore(STORE_NAME).get('current'))) ?? null;
-  }
-
-  async function persistProject(project: ProjectSnapshot): Promise<void> {
-    const db = await openDatabase();
-    const savedAt = Date.now();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    store.put({ id: 'current', savedAt, project } satisfies RecoveryRecord);
-    store.put({ id: 'backup-' + savedAt, savedAt, project } satisfies RecoveryRecord);
-    await new Promise<void>((resolve, reject) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error ?? new Error('Local autosave failed.'));
-      tx.onabort = () => reject(tx.error ?? new Error('Local autosave was cancelled.'));
-    });
-
-    const readTx = db.transaction(STORE_NAME, 'readonly');
-    const all = await requestResult(readTx.objectStore(STORE_NAME).getAll()) as RecoveryRecord[];
-    const backups = all.filter((record) => record.id.startsWith('backup-')).sort((a, b) => b.savedAt - a.savedAt);
-    if (backups.length > 3) {
-      const cleanup = db.transaction(STORE_NAME, 'readwrite');
-      backups.slice(3).forEach((record) => cleanup.objectStore(STORE_NAME).delete(record.id));
-      await new Promise<void>((resolve, reject) => {
-        cleanup.oncomplete = () => resolve();
-        cleanup.onerror = () => reject(cleanup.error ?? new Error('Could not clean old recovery copies.'));
-      });
-    }
-  }
 
   function scheduleAutosave(project: ProjectSnapshot): void {
     latestProject = project;
@@ -94,7 +37,7 @@
   async function checkForRecovery(): Promise<void> {
     try {
       const saved = await getCurrentRecovery();
-      if (saved?.project?.format === 'PixelForgeProject') {
+      if (isProjectSnapshot(saved?.project)) {
         recovery = saved;
         saveStatus = 'A local recovery is available';
       }
@@ -117,7 +60,7 @@
 
   function handleEditorState(event: Event): void {
     const message = (event as CustomEvent<{ type: string; project: ProjectSnapshot }>).detail;
-    if (message?.type !== 'PIXELFORGE_STATE' || message.project?.format !== 'PixelForgeProject') return;
+    if (message?.type !== 'PIXELFORGE_STATE' || !isProjectSnapshot(message.project)) return;
     const project = message.project;
     latestProject = project;
     if (pendingStateCapture) {
