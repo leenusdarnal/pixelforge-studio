@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#17191d" />
+<meta name="description" content="A touch-friendly, layer-based image editor that works offline." />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+<link rel="apple-touch-icon" href="./icons/icon-192.png" />
+<title>PixelForge Studio 2.2 — Mobile Image Editor</title>
+<style>
+:root{--bg:#17191d;--panel:#202329;--panel2:#252931;--panel3:#2d323b;--line:#383e49;--text:#e8eaf0;--muted:#9ba3b3;--accent:#82aaff;--accent2:#557fd5;--hover:#333a46;--good:#69c7a1;--danger:#df7c82;--shadow:0 10px 35px #0008;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}button,input,select{font:inherit;color:inherit}button{cursor:pointer;border:0}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100dvh;display:grid;grid-template-rows:48px 40px minmax(0,1fr) 26px;min-width:320px}
+.topbar{display:flex;align-items:center;gap:14px;padding:0 14px;background:#1c1f24;border-bottom:1px solid #101216;user-select:none}.brand{display:flex;align-items:center;gap:9px;font-weight:750;letter-spacing:.2px;white-space:nowrap}.brand-mark{width:25px;height:25px;border-radius:7px;background:linear-gradient(135deg,#9cc4ff,#7e79ff 55%,#d48df4);display:grid;place-items:center;color:#1c2140;font-size:15px;font-weight:900;box-shadow:0 2px 10px #769bff44}.brand small{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.8px;margin-left:3px}.docname{display:flex;align-items:center;gap:7px;margin-left:12px;color:#c9ced8;font-size:12px;min-width:0}.docname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}.top-spacer{flex:1}.topbtn{background:transparent;color:#c4cad5;border-radius:6px;padding:7px 9px;font-size:12px}.topbtn:hover{background:var(--hover);color:white}.topbtn.primary{background:var(--accent2);color:#fff;padding:7px 13px;font-weight:650}.topbtn.primary:hover{background:#6690e4}.separator{width:1px;height:20px;background:var(--line)}
+.menubar{display:flex;align-items:center;gap:3px;padding:0 12px;background:#202329;border-bottom:1px solid #111318}.menuitem{padding:7px 10px;border-radius:5px;background:transparent;color:#c3c8d2;font-size:12px}.menuitem:hover{background:var(--hover);color:#fff}.menuslot{position:relative}.dropdown{display:none;position:absolute;z-index:30;top:31px;left:0;min-width:190px;padding:6px;background:#292e36;border:1px solid #424a57;border-radius:8px;box-shadow:var(--shadow)}.menuslot.open .dropdown{display:block}.dropitem{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 9px;border-radius:5px;background:transparent;text-align:left;font-size:12px;color:#d5dae3}.dropitem:hover{background:#3a4350}.shortcut{color:#8993a5;font-size:10px;margin-left:24px}.dropsep{height:1px;background:#414854;margin:5px 3px}
+.workspace{min-height:0;display:grid;grid-template-columns:54px minmax(0,1fr) 286px;background:#17191d}.toolbar{background:#202329;border-right:1px solid #111318;display:flex;flex-direction:column;align-items:center;padding:9px 6px;gap:5px;z-index:2}.tool{width:39px;height:37px;border-radius:7px;background:transparent;color:#aeb6c5;display:grid;place-items:center;position:relative;font-size:18px}.tool:hover{background:#303641;color:white}.tool.active{background:#35445f;color:#a9c6ff;box-shadow:inset 0 0 0 1px #6a91d4}.tool .tip{display:none;position:absolute;left:47px;white-space:nowrap;z-index:40;background:#11151b;color:#f2f4f7;border:1px solid #414956;border-radius:5px;padding:5px 8px;font-size:11px;box-shadow:var(--shadow);pointer-events:none}.tool:hover .tip{display:block}.tool-sep{height:1px;width:29px;background:var(--line);margin:5px 0}.swatches{margin-top:auto;display:grid;grid-template-columns:repeat(2,17px);grid-template-rows:repeat(2,17px);gap:3px;position:relative;padding:2px}.swatch{border:1px solid #8a91a0;border-radius:3px;cursor:pointer}.swatch.fg{z-index:1;grid-area:1/1/3/3;width:20px;height:20px}.swatch.bg{grid-area:2/2/4/4;width:16px;height:16px;background:#fff}
+.center{min-width:0;min-height:0;display:flex;flex-direction:column;position:relative}.optionsbar{height:43px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 12px;background:#252931;border-bottom:1px solid #14171c;overflow-x:auto;scrollbar-width:none}.optionsbar::-webkit-scrollbar{display:none}.tooltitle{font-size:11px;font-weight:700;color:#d7dce5;white-space:nowrap;min-width:58px}.optgroup{display:flex;align-items:center;gap:6px;white-space:nowrap}.optlabel{font-size:10px;color:#99a2b1}.mini-input{height:25px;width:58px;background:#171a20;border:1px solid #414854;border-radius:5px;padding:0 6px;font-size:11px}.mini-select{height:25px;max-width:118px;background:#171a20;border:1px solid #414854;border-radius:5px;padding:0 6px;font-size:11px}.mini-color{width:28px;height:25px;padding:2px;background:#171a20;border:1px solid #414854;border-radius:5px}.range{width:86px;accent-color:var(--accent)}.workspace-canvas{flex:1;min-height:0;overflow:auto;position:relative;background-color:#17191d;background-image:radial-gradient(#252a32 1px,transparent 1px);background-size:18px 18px}.stage-wrap{min-width:100%;min-height:100%;display:flex;align-items:center;justify-content:center;padding:44px 42px}.stage{position:relative;box-shadow:0 14px 45px #000a,0 0 0 1px #ffffff14;background:conic-gradient(#777 25%,#555 0 50%,#777 0 75%,#555 0) 0 0/18px 18px;touch-action:none}.stage canvas{position:absolute;inset:0;display:block}.stage #displayCanvas{z-index:1}.stage #overlayCanvas{z-index:2;pointer-events:none}.empty-state{position:absolute;z-index:5;inset:0;display:grid;place-items:center;text-align:center;color:#e8edf7;background:linear-gradient(135deg,#272e3a,#20242d);padding:25px}.empty-card{max-width:320px}.empty-card .empty-icon{font-size:42px;margin-bottom:12px;filter:drop-shadow(0 8px 12px #0008)}.empty-card h2{margin:0 0 8px;font-size:20px}.empty-card p{margin:0 0 18px;color:#9da8bb;font-size:12px;line-height:1.6}.empty-card button{background:#567fcf;color:white;border-radius:7px;padding:9px 16px;font-size:12px;font-weight:650}.empty-card button:hover{background:#6d95e4}.canvas-hint{position:absolute;bottom:12px;left:14px;color:#737e8f;font-size:10px;pointer-events:none}.sidepanel{background:#202329;border-left:1px solid #111318;min-height:0;display:flex;flex-direction:column}.tabs{display:flex;padding:0 10px;border-bottom:1px solid #13161b;gap:13px;height:42px;align-items:stretch}.tab{background:transparent;color:#8e98a9;font-size:11px;padding:0 4px;position:relative}.tab.active{color:#eef2f8;font-weight:700}.tab.active:after{content:"";height:2px;background:var(--accent);position:absolute;bottom:0;left:0;right:0;border-radius:2px}.panel-content{min-height:0;overflow:auto;padding:12px}.section-title{display:flex;align-items:center;justify-content:space-between;color:#dce1ea;font-size:11px;font-weight:700;margin:2px 0 10px}.tiny-actions{display:flex;gap:4px}.tiny-btn{background:#2b3039;border:1px solid #414854;color:#bdc5d3;border-radius:5px;width:25px;height:24px;font-size:14px;display:grid;place-items:center}.tiny-btn:hover{background:#3a4350;color:white}.layer-list{display:flex;flex-direction:column;gap:5px}.layer-row{display:grid;grid-template-columns:18px 38px minmax(0,1fr) 18px;gap:7px;align-items:center;padding:7px 6px;border-radius:6px;background:#272c34;border:1px solid transparent;min-height:49px;cursor:pointer}.layer-row:hover{background:#303640}.layer-row.dragging{opacity:.45}.layer-row.drop-target{outline:1px dashed var(--accent);outline-offset:1px}.layer-row.mask-editing{border-left:3px solid #e7c36f}.layer-lock{background:transparent;color:#9ba7bb;font-size:12px;padding:0}.layer-lock.locked{color:#f0c477}.layer-name{cursor:text}.layer-name:hover{text-decoration:underline;text-decoration-style:dotted}.history-entry{text-align:left}.history-entry.current{background:#303e55;color:#fff}.selection-help{padding:8px;border:1px solid #3c4655;border-radius:6px;background:#252b35;color:#aebbd0;font-size:10px;line-height:1.5}.layer-row.active{background:#303e55;border-color:#5776a9}.visibility{background:transparent;color:#9ba7bb;font-size:13px;padding:0}.thumb{width:36px;height:34px;border-radius:4px;border:1px solid #4d5663;background:conic-gradient(#777 25%,#555 0 50%,#777 0 75%,#555 0) 0 0/8px 8px;overflow:hidden}.thumb canvas{width:100%;height:100%;object-fit:contain}.layer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#d8dde7}.layer-type{color:#8490a2;font-size:9px;margin-top:3px}.layer-actions{display:flex;gap:5px;margin:10px 0 14px}.panel-divider{height:1px;background:#3a404b;margin:14px 0}.control{margin:0 0 13px}.control-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.control label{font-size:10px;color:#aeb7c6}.control output{font-size:10px;color:#cbd3e0}.control input[type=range]{width:100%;accent-color:var(--accent);height:14px}.control select,.control input[type=text],.control input[type=number]{width:100%;height:29px;background:#171a20;border:1px solid #414854;border-radius:5px;padding:0 8px;font-size:11px}.control button{background:#354b70;color:#dce9ff;border-radius:5px;padding:7px 10px;font-size:10px;font-weight:650}.control button:hover{background:#42618f}.control-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.apply-btn{width:100%;margin-top:2px}.hint{font-size:10px;color:#7f8999;line-height:1.5}.statusbar{display:flex;align-items:center;gap:15px;padding:0 12px;background:#202329;border-top:1px solid #111318;color:#8490a0;font-size:10px}.statusbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}.status-zoom{width:44px;background:transparent;border:0;color:#bac3d1;font-size:10px;text-align:right}.pill{border:1px solid #3b424d;border-radius:4px;padding:2px 5px;color:#9ca6b5}.toast{position:fixed;bottom:40px;left:50%;transform:translate(-50%,15px);opacity:0;pointer-events:none;z-index:100;padding:9px 14px;background:#303945;border:1px solid #536174;border-radius:7px;box-shadow:var(--shadow);font-size:11px;color:#eef3fa;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal-backdrop{display:none;position:fixed;z-index:80;inset:0;background:#080a0dcc;align-items:center;justify-content:center;padding:20px}.modal-backdrop.open{display:flex}.modal{width:min(430px,100%);background:#252a32;border:1px solid #49515e;border-radius:11px;box-shadow:var(--shadow);padding:18px}.modal h3{margin:0 0 14px;font-size:15px}.modal p{font-size:11px;color:#a6b0c0;line-height:1.55}.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal label{display:block;font-size:10px;color:#aeb7c6;margin-bottom:5px}.modal input,.modal select{width:100%;height:32px;background:#171a20;border:1px solid #414854;border-radius:5px;padding:0 8px;font-size:12px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal-actions button{padding:8px 12px;border-radius:6px;font-size:11px;background:#343b47}.modal-actions .confirm{background:#557fcf;color:#fff;font-weight:700}
+@media(max-width:850px){.workspace{grid-template-columns:48px minmax(0,1fr) 235px}.sidepanel{font-size:90%}.stage-wrap{padding:25px 20px}.docname{display:none}.optionsbar{gap:9px}}
+@media(max-width:620px){.app{grid-template-rows:44px 38px minmax(0,1fr) 25px}.brand small{display:none}.topbar{gap:8px;padding:0 8px}.topbtn{padding:6px 7px}.workspace{grid-template-columns:43px minmax(0,1fr)}.toolbar{padding:7px 3px}.tool{width:35px;height:34px}.sidepanel{display:none}.optionsbar{height:40px;padding:0 8px}.stage-wrap{padding:20px 12px}.statusbar{gap:7px;padding:0 7px}.statusbar .hide-mobile{display:none}}
+
+@media (max-width: 760px){
+  .workspace{grid-template-columns:48px minmax(0,1fr) 230px}
+  .topbar{gap:7px;padding:0 8px}.brand small{display:none}.docname{margin-left:2px}.docname span{max-width:100px}
+  .topbtn{padding:6px 7px;font-size:11px}.menubar{padding:0 5px;gap:0}.menuitem{padding:7px 6px;font-size:11px}
+  .toolbar{padding-left:4px;padding-right:4px}.tool{width:36px;height:34px}
+  .sidepanel .tabs{gap:8px;padding:0 7px}.panel-content{padding:9px}
+}
+@media (max-width: 560px){
+  .workspace{grid-template-columns:44px minmax(0,1fr)}
+  .sidepanel{position:absolute;right:0;top:88px;bottom:26px;width:min(260px,78vw);z-index:10;box-shadow:-10px 0 28px #0006;transform:translateX(calc(100% - 38px));transition:transform .18s ease}
+  .sidepanel:focus-within,.sidepanel:hover{transform:translateX(0)}
+  .sidepanel .tabs{min-height:42px}.stage-wrap{padding:25px 18px}
+  .hide-mobile{display:none}.statusbar{gap:6px;padding:0 7px}
+  .optionsbar{gap:8px;padding:0 7px}.tooltitle{min-width:50px}
+}
+
+/* PixelForge 2.2 — mobile and touch layout */
+html, body { overscroll-behavior: none; }
+button, .tool, .tab, input[type="range"], select { touch-action: manipulation; }
+.stage { touch-action: none; }
+.panel-scrim { display:none; }
+.topbar #panelToggle { display:none; }
+@media (max-width: 800px) {
+  .app { grid-template-rows: 48px 36px minmax(0,1fr) 30px; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+  .topbar { gap:6px; padding:0 8px; }
+  .brand { font-size:14px; }
+  .brand-mark { width:24px; height:24px; }
+  .docname, .topbar #newBtn, .topbar #openBtn, .topbar #undoBtn, .topbar #redoBtn, .topbar .separator { display:none; }
+  .topbar .top-spacer { flex:1; }
+  .topbar #panelToggle { display:inline-flex; align-items:center; white-space:nowrap; }
+  .topbar #installBtn { white-space:nowrap; }
+  .topbar .topbtn { min-height:36px; padding:6px 9px; font-size:11px; }
+  .menubar { overflow-x:auto; overflow-y:hidden; white-space:nowrap; scrollbar-width:none; }
+  .menubar::-webkit-scrollbar { display:none; }
+  .workspace { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) 62px; position:relative; }
+  .center { grid-column:1; grid-row:1; min-height:0; }
+  .toolbar { grid-column:1; grid-row:2; height:62px; width:100%; min-width:0; flex-direction:row; justify-content:flex-start; align-items:center; overflow-x:auto; overflow-y:hidden; padding:5px 8px; gap:5px; border-right:0; border-top:1px solid #111318; scrollbar-width:thin; }
+  .tool { flex:0 0 46px; width:46px; height:48px; min-height:44px; font-size:20px; border-radius:9px; }
+  .tool .tip { display:none !important; }
+  .tool-sep { flex:0 0 1px; width:1px; height:30px; margin:0 4px; }
+  .swatches { flex:0 0 43px; margin:0 4px 0 7px; transform:scale(1.08); }
+  .optionsbar { height:44px; padding:0 9px; gap:12px; }
+  .tooltitle { min-width:48px; }
+  .workspace-canvas { min-height:0; overscroll-behavior:contain; }
+  .stage-wrap { min-width:100%; min-height:100%; padding:14px 10px; }
+  .sidepanel { position:fixed; z-index:90; top:auto; left:0; right:0; bottom:calc(30px + env(safe-area-inset-bottom)); width:100%; height:min(72dvh,650px); max-height:calc(100dvh - 120px); border:1px solid #424a57; border-bottom:0; border-radius:16px 16px 0 0; box-shadow:0 -18px 50px #0009; transform:translateY(calc(110% + 30px)); transition:transform .22s ease; }
+  .sidepanel.panel-open { transform:translateY(0); }
+  .sidepanel .tabs { height:48px; min-height:48px; justify-content:space-around; }
+  .sidepanel .tab { min-width:72px; min-height:44px; font-size:12px; }
+  .panel-content { padding:14px; padding-bottom:calc(22px + env(safe-area-inset-bottom)); }
+  .panel-scrim { display:block; position:fixed; inset:0; z-index:80; border:0; border-radius:0; background:#06080bb8; opacity:0; visibility:hidden; transition:opacity .18s ease,visibility .18s ease; }
+  .panel-scrim.visible { opacity:1; visibility:visible; }
+  .statusbar { height:30px; padding:0 8px; gap:6px; padding-bottom:env(safe-area-inset-bottom); }
+  .statusbar .right { gap:8px; }
+  .statusbar .topbtn { min-width:34px; min-height:28px; }
+  .status-zoom { width:42px; }
+  .canvas-hint { font-size:9px; bottom:7px; left:8px; }
+  .modal-backdrop { padding:12px; align-items:flex-end; }
+  .modal { width:100%; max-height:85dvh; overflow:auto; border-radius:15px 15px 10px 10px; padding:18px; padding-bottom:calc(18px + env(safe-area-inset-bottom)); }
+  .modal input, .modal select { min-height:40px; font-size:14px; }
+  .modal-actions button { min-height:42px; padding:10px 15px; }
+  .control input[type="range"] { height:24px; }
+  .control select, .control input[type="text"], .control input[type="number"] { height:40px; font-size:14px; }
+  .control button { min-height:38px; font-size:12px; }
+  .tiny-btn { width:34px; height:34px; }
+  .layer-row { min-height:56px; grid-template-columns:28px 42px minmax(0,1fr) 26px; }
+  .layer-lock, .visibility { min-width:28px; min-height:34px; }
+}
+@media (max-width: 380px) {
+  .brand { font-size:13px; }
+  .topbar .topbtn { padding:5px 7px; }
+  .optionsbar { gap:9px; }
+  .tool { flex-basis:44px; width:44px; }
+  .statusbar .hide-mobile { display:none; }
+}
+@media (orientation:landscape) and (max-height:520px) and (max-width:950px) {
+  .app { grid-template-rows:42px 32px minmax(0,1fr) 26px; }
+  .workspace { grid-template-rows:minmax(0,1fr) 52px; }
+  .toolbar { height:52px; }
+  .tool { height:42px; min-height:40px; }
+  .sidepanel { height:min(82dvh,460px); }
+  .statusbar { height:26px; }
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">✦</div><div>PixelForge <small>STUDIO 2.2</small></div></div>
+    <div class="docname"><span id="docTitle">Untitled design</span><span class="pill" id="saveState">Ready</span></div>
+    <div class="top-spacer"></div>
+    <button class="topbtn" id="newBtn">＋ New</button>
+    <button class="topbtn" id="openBtn">↥ Open</button>
+    <div class="separator"></div>
+    <button class="topbtn" id="undoBtn" title="Undo (Ctrl+Z)">↶</button>
+    <button class="topbtn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</button>
+    <button class="topbtn" id="panelToggle" aria-label="Open layers and adjustments" title="Panels">▤ Panels</button>
+    <button class="topbtn" id="installBtn" hidden>Install</button>
+    <button class="topbtn primary" id="exportBtn">Export ↗</button>
+  </header>
+  <nav class="menubar" aria-label="Main menu">
+    <div class="menuslot"><button class="menuitem">File ▾</button><div class="dropdown">
+      <button class="dropitem" data-action="new">New document <span class="shortcut">Ctrl+N</span></button><button class="dropitem" data-action="open">Open image… <span class="shortcut">Ctrl+O</span></button><button class="dropitem" data-action="import">Place image as layer…</button><div class="dropsep"></div><button class="dropitem" data-action="projectSave">Save project (.pfs)</button><button class="dropitem" data-action="projectLoad">Open project (.pfs)</button><button class="dropitem" data-action="export">Export image… <span class="shortcut">Ctrl+Shift+E</span></button>
+    </div></div>
+    <div class="menuslot"><button class="menuitem">Edit ▾</button><div class="dropdown"><button class="dropitem" data-action="undo">Undo <span class="shortcut">Ctrl+Z</span></button><button class="dropitem" data-action="redo">Redo <span class="shortcut">Ctrl+Shift+Z</span></button><div class="dropsep"></div><button class="dropitem" data-action="duplicate">Duplicate layer</button><button class="dropitem" data-action="delete">Delete layer</button><button class="dropitem" data-action="clear">Clear layer</button><div class="dropsep"></div><button class="dropitem" data-action="copy">Copy <span class="shortcut">Ctrl+C</span></button><button class="dropitem" data-action="cut">Cut <span class="shortcut">Ctrl+X</span></button><button class="dropitem" data-action="paste">Paste <span class="shortcut">Ctrl+V</span></button><button class="dropitem" data-action="selectAll">Select all <span class="shortcut">Ctrl+A</span></button><button class="dropitem" data-action="deselect">Deselect <span class="shortcut">Ctrl+D</span></button></div></div>
+    <div class="menuslot"><button class="menuitem">Image ▾</button><div class="dropdown"><button class="dropitem" data-action="resize">Canvas size…</button><button class="dropitem" data-action="imageSize">Image size / resample…</button><button class="dropitem" data-action="rotate">Rotate 90°</button><button class="dropitem" data-action="flipH">Flip horizontal</button><button class="dropitem" data-action="flipV">Flip vertical</button></div></div>
+    <div class="menuslot"><button class="menuitem">Layer ▾</button><div class="dropdown"><button class="dropitem" data-action="addLayer">New layer</button><button class="dropitem" data-action="duplicate">Duplicate layer</button><button class="dropitem" data-action="up">Bring forward</button><button class="dropitem" data-action="down">Send backward</button><button class="dropitem" data-action="delete">Delete layer</button><div class="dropsep"></div><button class="dropitem" data-action="flatten">Flatten image</button></div></div>
+    <div class="menuslot"><button class="menuitem">Filter ▾</button><div class="dropdown"><button class="dropitem" data-filter="blur">Gaussian blur…</button><button class="dropitem" data-filter="sharpen">Sharpen</button><button class="dropitem" data-filter="grayscale">Black &amp; white</button><button class="dropitem" data-filter="sepia">Sepia</button><button class="dropitem" data-filter="invert">Invert</button><button class="dropitem" data-filter="vintage">Vintage</button></div></div>
+    <div class="menuslot"><button class="menuitem">View ▾</button><div class="dropdown"><button class="dropitem" data-action="fit">Fit on screen</button><button class="dropitem" data-action="actual">Actual pixels (100%)</button><button class="dropitem" data-action="grid">Toggle grid</button></div></div>
+  </nav>
+  <main class="workspace">
+    <aside class="toolbar" aria-label="Tools" role="toolbar">
+      <button class="tool active" data-tool="move" title="Move (V)">✥<span class="tip">Move (V)</span></button>
+      <button class="tool" data-tool="marquee" title="Rectangular marquee (M)">▧<span class="tip">Rectangular marquee (M)</span></button>
+      <button class="tool" data-tool="lasso" title="Freehand lasso (L)">〰<span class="tip">Freehand lasso (L)</span></button>
+      <button class="tool" data-tool="crop" title="Crop (C)">⌗<span class="tip">Crop (C)</span></button>
+      <div class="tool-sep"></div>
+      <button class="tool" data-tool="brush" title="Brush (B)">🖌<span class="tip">Brush (B)</span></button>
+      <button class="tool" data-tool="pencil" title="Pencil (P)">✎<span class="tip">Pencil (P)</span></button>
+      <button class="tool" data-tool="eraser" title="Eraser (E)">◩<span class="tip">Eraser (E)</span></button>
+      <button class="tool" data-tool="fill" title="Fill (G)">▨<span class="tip">Fill (G)</span></button>
+      <button class="tool" data-tool="eyedropper" title="Eyedropper (I)">◉<span class="tip">Eyedropper (I)</span></button>
+      <div class="tool-sep"></div>
+      <button class="tool" data-tool="text" title="Type (T)">T<span class="tip">Type (T)</span></button>
+      <button class="tool" data-tool="rectangle" title="Rectangle (U)">▭<span class="tip">Rectangle (U)</span></button>
+      <button class="tool" data-tool="ellipse" title="Ellipse (O)">◯<span class="tip">Ellipse (O)</span></button>
+      <button class="tool" data-tool="line" title="Line (\)">／<span class="tip">Line (\)</span></button>
+      <div class="tool-sep"></div>
+      <button class="tool" data-tool="hand" title="Hand / Pan (H)">✋<span class="tip">Hand / Pan (H)</span></button>
+      <button class="tool" data-tool="zoom" title="Zoom (Z)">⌕<span class="tip">Zoom (Z)</span></button>
+      <div class="swatches"><input class="swatch fg" type="color" id="fgColor" value="#e8efff" title="Foreground colour"><input class="swatch bg" type="color" id="bgColor" value="#242a36" title="Background colour"></div>
+    </aside>
+    <section class="center">
+      <div class="optionsbar" id="optionsbar">
+        <div class="tooltitle" id="toolTitle">Move tool</div>
+        <div class="optgroup"><span class="optlabel">Size</span><input class="mini-input" id="brushSize" type="number" min="1" max="300" value="24"></div>
+        <div class="optgroup"><span class="optlabel">Opacity</span><input class="range" id="toolOpacity" type="range" min="1" max="100" value="100"><span class="optlabel" id="opacityValue">100%</span></div>
+        <div class="optgroup"><span class="optlabel">Mode</span><select class="mini-select" id="shapeMode"><option value="fill">Fill</option><option value="stroke">Stroke</option></select></div>
+        <div class="optgroup"><span class="optlabel">Font</span><select class="mini-select" id="fontFamily"><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Impact</option><option>Courier New</option></select></div>
+        <div class="optgroup"><span class="optlabel">Text px</span><input class="mini-input" id="fontSize" type="number" min="8" max="300" value="64"></div>
+      </div>
+      <div class="workspace-canvas" id="canvasViewport">
+        <div class="stage-wrap" id="stageWrap"><div class="stage" id="stage"><canvas id="displayCanvas"></canvas><canvas id="overlayCanvas"></canvas></div></div>
+        <div class="canvas-hint" id="canvasHint">Touch to edit · Pinch with two fingers to zoom · Panels for layers and adjustments</div>
+      </div>
+    </section>
+    <aside class="sidepanel">
+      <div class="tabs"><button class="tab active" data-tab="layers">Layers</button><button class="tab" data-tab="adjust">Adjust</button><button class="tab" data-tab="history">History</button></div>
+      <div class="panel-content" id="layersPanel">
+        <div class="section-title"><span>Layer stack</span><div class="tiny-actions"><button class="tiny-btn" id="addLayerBtn" title="New layer">＋</button><button class="tiny-btn" id="duplicateLayerBtn" title="Duplicate">▣</button><button class="tiny-btn" id="deleteLayerBtn" title="Delete">−</button></div></div>
+        <div class="layer-list" id="layerList"></div>
+        <div class="panel-divider"></div>
+        <div class="section-title"><span>Layer properties</span><button class="tiny-btn" id="renameLayerBtn" title="Rename selected layer">✎</button></div>
+        <div class="control"><div class="control-head"><label for="layerOpacity">Opacity</label><output id="layerOpacityOut">100%</output></div><input id="layerOpacity" type="range" min="0" max="100" value="100"></div>
+        <div class="control"><div class="control-head"><label>Protection</label><button id="toggleLockBtn" style="padding:5px 8px">Lock layer</button></div></div><div class="section-title"><span>Layer mask</span></div><div class="control-row"><div class="control"><button id="addMaskBtn" class="apply-btn">Add mask</button></div><div class="control"><button id="editMaskBtn" class="apply-btn" disabled>Edit mask</button></div></div><div class="control-row"><div class="control"><button id="invertMaskBtn" class="apply-btn" disabled>Invert</button></div><div class="control"><button id="applyMaskBtn" class="apply-btn" disabled>Apply mask</button></div></div><div class="control-row"><div class="control"><button id="hideSelectionMaskBtn" class="apply-btn" disabled>Hide selection</button></div><div class="control"><button id="removeMaskBtn" class="apply-btn" disabled>Remove mask</button></div></div><div class="hint">White reveals; transparent hides. Add a mask with a selection to reveal only that area, paint white to reveal and black/eraser to hide. Masks stay editable until applied.</div><div class="control"><label for="blendMode">Blend mode</label><select id="blendMode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color dodge</option><option value="color-burn">Color burn</option><option value="hard-light">Hard light</option><option value="soft-light">Soft light</option><option value="difference">Difference</option><option value="exclusion">Exclusion</option></select></div>
+        <div class="control-row"><div class="control"><label>Layer order</label><button id="layerUpBtn" style="width:100%;margin-top:5px">↑ Forward</button></div><div class="control"><label>&nbsp;</label><button id="layerDownBtn" style="width:100%;margin-top:5px">↓ Backward</button></div></div>
+        <div class="selection-help">Double-click a layer name to rename it. Drag layers to reorder, and use the lock icon to protect a layer. Shortcuts: Ctrl+C/X/V, Ctrl+A, Ctrl+D.</div><div class="hint" style="margin-top:9px">Tip: hide a layer with the eye icon. Select a layer before painting or applying a filter.</div>
+      </div>
+      <div class="panel-content" id="adjustPanel" hidden>
+        <div class="section-title">Quick adjustments</div>
+        <div class="control"><div class="control-head"><label for="brightness">Brightness</label><output id="brightnessOut">0</output></div><input id="brightness" type="range" min="-100" max="100" value="0"></div>
+        <div class="control"><div class="control-head"><label for="contrast">Contrast</label><output id="contrastOut">0</output></div><input id="contrast" type="range" min="-100" max="100" value="0"></div>
+        <div class="control"><div class="control-head"><label for="saturation">Saturation</label><output id="saturationOut">0</output></div><input id="saturation" type="range" min="-100" max="100" value="0"></div>
+        <div class="control"><div class="control-head"><label for="hue">Hue</label><output id="hueOut">0°</output></div><input id="hue" type="range" min="-180" max="180" value="0"></div>
+        <button class="apply-btn" id="applyAdjustments">Apply adjustments to selected layer</button>
+        <div class="panel-divider"></div>
+        <div class="section-title">One-click looks</div>
+        <div class="control-row"><div class="control"><button class="apply-btn" data-filter="grayscale">B&amp;W</button></div><div class="control"><button class="apply-btn" data-filter="sepia">Sepia</button></div></div>
+        <div class="control-row"><div class="control"><button class="apply-btn" data-filter="vintage">Vintage</button></div><div class="control"><button class="apply-btn" data-filter="invert">Invert</button></div></div>
+        <div class="control"><button class="apply-btn" data-filter="blur">Gaussian blur</button></div>
+        <div class="control"><button class="apply-btn" data-filter="sharpen">Sharpen</button></div>
+        <div class="hint">Adjustments are applied to the selected raster layer. Duplicate a layer first to preserve the original.</div>
+      </div>
+      <div class="panel-content" id="historyPanel" hidden>
+        <div class="section-title"><span>History</span><span class="hint">Recent actions</span></div>
+        <div id="historyList" class="layer-list"></div>
+        <p class="hint">Click an earlier step to jump back. Ctrl+Z / Ctrl+Shift+Z undo and redo. Ctrl+S saves an editable .pfs project.</p>
+      </div>
+    </aside>
+    <button class="panel-scrim" id="panelScrim" aria-label="Close panels" tabindex="-1"></button>
+  </main>
+  <footer class="statusbar"><span id="docDimensions">1200 × 800 px</span><span class="hide-mobile" id="cursorPosition">X: —  Y: —</span><span class="hide-mobile" id="activeToolLabel">Move tool</span><div class="right"><button class="topbtn" id="zoomOut" style="padding:2px 5px">−</button><input class="status-zoom" id="zoomValue" value="70%" aria-label="Zoom percentage"><button class="topbtn" id="zoomIn" style="padding:2px 5px">＋</button><button class="topbtn" id="fitBtn" style="padding:2px 7px">Fit</button></div></footer>
+</div>
+<input type="file" id="imageInput" accept="image/*" hidden>
+<input type="file" id="projectInput" accept=".pfs,application/json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal-backdrop" id="newModal"><div class="modal"><h3>Create a new document</h3><p>Choose a canvas size. You can change the dimensions later by resizing the canvas.</p><div class="modal-grid"><div><label for="newWidth">Width (px)</label><input id="newWidth" type="number" min="1" max="6000" value="1200"></div><div><label for="newHeight">Height (px)</label><input id="newHeight" type="number" min="1" max="6000" value="800"></div><div><label for="newBg">Background</label><select id="newBg"><option value="transparent">Transparent</option><option value="#ffffff">White</option><option value="#202b44">Midnight blue</option><option value="#17191d">Dark</option></select></div><div><label for="newName">Document name</label><input id="newName" value="Untitled design"></div></div><div class="modal-actions"><button data-close="newModal">Cancel</button><button class="confirm" id="createDocBtn">Create document</button></div></div></div>
+<div class="modal-backdrop" id="exportModal"><div class="modal"><h3>Export your artwork</h3><p>Export a flattened copy of the visible layers. Your editable layer stack remains in this project.</p><div class="modal-grid"><div><label for="exportFormat">Format</label><select id="exportFormat"><option value="png">PNG — transparency</option><option value="jpeg">JPEG — smaller file</option><option value="webp">WebP — modern</option></select></div><div><label for="exportQuality">Quality</label><select id="exportQuality"><option value="0.95">High</option><option value="0.82">Balanced</option><option value="0.65">Smaller file</option></select></div></div><div class="modal-actions"><button data-close="exportModal">Cancel</button><button class="confirm" id="downloadExport">Download image</button></div></div></div>
+<div class="modal-backdrop" id="imageSizeModal"><div class="modal"><h3>Image size</h3><p>Scale every layer to the new dimensions. This resamples the artwork rather than only changing the canvas bounds.</p><div class="modal-grid"><div><label for="imageWidth">Width (px)</label><input id="imageWidth" type="number" min="1" max="6000"></div><div><label for="imageHeight">Height (px)</label><input id="imageHeight" type="number" min="1" max="6000"></div></div><label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:#cbd3e0"><input type="checkbox" id="keepAspect" checked> Keep aspect ratio</label><div class="modal-actions"><button data-close="imageSizeModal">Cancel</button><button class="confirm" id="resizeImageBtn">Resample image</button></div></div></div>
+<div class="modal-backdrop" id="resizeModal"><div class="modal"><h3>Canvas size</h3><p>Resize the document bounds. Layers are kept in place and clipped to the new canvas.</p><div class="modal-grid"><div><label for="resizeWidth">Width (px)</label><input id="resizeWidth" type="number" min="1" max="6000"></div><div><label for="resizeHeight">Height (px)</label><input id="resizeHeight" type="number" min="1" max="6000"></div></div><div class="modal-actions"><button data-close="resizeModal">Cancel</button><button class="confirm" id="resizeDocBtn">Resize canvas</button></div></div></div>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const display = $('displayCanvas'), overlay = $('overlayCanvas'), stage = $('stage'), viewport = $('canvasViewport');
+const dctx = display.getContext('2d'), octx = overlay.getContext('2d');
+let docW=1200, docH=800, zoom=.7, layers=[], activeId=null, tool='move', pointerStart=null, isDrawing=false, currentPath=[], selection=null, cropRect=null, moveBuffer=null, gridOn=false, docName='Untitled design', clipboardCanvas=null, clipboardX=0, clipboardY=0, draggingLayerId=null, moveMaskBuffer=null;
+let history=[], redoStack=[], historyLabels=[], historyIndex=-1, lastAction='New document', drawingSnapshot=null;
+const activeTouchPoints=new Map();let pinchGesture=null;
+const maxHistory=24;
+const toolNames={move:'Move tool',marquee:'Rectangular marquee',lasso:'Freehand lasso',crop:'Crop tool',brush:'Brush tool',pencil:'Pencil tool',eraser:'Eraser tool',fill:'Fill tool',eyedropper:'Eyedropper tool',text:'Type tool',rectangle:'Rectangle tool',ellipse:'Ellipse tool',line:'Line tool',hand:'Hand tool',zoom:'Zoom tool'};
+const toolKeys={v:'move',m:'marquee',l:'lasso',c:'crop',b:'brush',p:'pencil',e:'eraser',g:'fill',i:'eyedropper',t:'text',u:'rectangle',o:'ellipse',h:'hand',z:'zoom'};
+const uid=()=>Math.random().toString(36).slice(2,10);
+function activeLayer(){return layers.find(l=>l.id===activeId)||layers[layers.length-1]}
+function makeLayer(name='Layer',type='pixel') {const c=document.createElement('canvas');c.width=docW;c.height=docH;return {id:uid(),name,type,canvas:c,mask:null,editMask:false,_maskComposite:null,_maskCompositeDirty:true,visible:true,opacity:100,blend:'source-over',locked:false}}
+function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('show'),2100)}
+function updateTitle(){ $('docTitle').textContent=docName; $('docDimensions').textContent=`${docW} × ${docH} px`; }
+function resizeCanvases(){display.width=overlay.width=docW;display.height=overlay.height=docH;stage.style.width=(docW*zoom)+'px';stage.style.height=(docH*zoom)+'px';layers.forEach(l=>{if(l.canvas.width!==docW||l.canvas.height!==docH){const c=document.createElement('canvas');c.width=docW;c.height=docH;c.getContext('2d').drawImage(l.canvas,0,0);l.canvas=c}if(l.mask&&(l.mask.width!==docW||l.mask.height!==docH)){const m=document.createElement('canvas');m.width=docW;m.height=docH;m.getContext('2d').drawImage(l.mask,0,0);l.mask=m}invalidateLayerComposite(l)});render()}
+function invalidateLayerComposite(layer){if(layer)layer._maskCompositeDirty=true}
+function renderedLayerCanvas(layer){if(!layer.mask)return layer.canvas;if(!layer._maskComposite||layer._maskComposite.width!==docW||layer._maskComposite.height!==docH){layer._maskComposite=document.createElement('canvas');layer._maskComposite.width=docW;layer._maskComposite.height=docH;layer._maskCompositeDirty=true}if(layer._maskCompositeDirty){const x=layer._maskComposite.getContext('2d');x.clearRect(0,0,docW,docH);x.globalCompositeOperation='source-over';x.drawImage(layer.canvas,0,0);x.globalCompositeOperation='destination-in';x.drawImage(layer.mask,0,0);x.globalCompositeOperation='source-over';layer._maskCompositeDirty=false}return layer._maskComposite}
+function paintTarget(layer){return layer&&layer.editMask&&layer.mask?layer.mask:layer?.canvas}
+function maskPaintOperation(layer,toolName){if(toolName==='eraser')return'destination-out';if(layer?.editMask&&layer.mask){const hex=$('fgColor').value;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(.299*r+.587*g+.114*b)<128?'destination-out':'source-over'}return'source-over'}
+function addLayerMask(){const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before creating a mask');return}if(l.mask){l.editMask=true;renderLayers();showToast('Mask editing selected');return}commit('Before add layer mask');const m=document.createElement('canvas');m.width=docW;m.height=docH;const x=m.getContext('2d');x.fillStyle='#fff';if(selection){x.save();applySelectionClip(x);x.fillRect(0,0,docW,docH);x.restore()}else{x.fillRect(0,0,docW,docH)}l.mask=m;l.editMask=true;invalidateLayerComposite(l);render();updateTool();showToast(selection?'Mask created: selected area revealed':'White layer mask added')}
+function hideSelectionWithMask(){const l=activeLayer();if(!l)return;if(!selection){showToast('Create a selection first');return}if(l.locked){showToast('Unlock this layer first');return}commit('Before hide selection on mask');if(!l.mask){l.mask=document.createElement('canvas');l.mask.width=docW;l.mask.height=docH;const base=l.mask.getContext('2d');base.fillStyle='#fff';base.fillRect(0,0,docW,docH)}const mctx=l.mask.getContext('2d');mctx.save();applySelectionClip(mctx);mctx.clearRect(0,0,docW,docH);mctx.restore();l.editMask=true;invalidateLayerComposite(l);render();updateTool();showToast('Selected area hidden by mask')}
+function toggleMaskEditing(){const l=activeLayer();if(!l||!l.mask){showToast('Add a mask first');return}if(l.locked){showToast('Unlock this layer before editing its mask');return}l.editMask=!l.editMask;renderLayers();updateTool();showToast(l.editMask?'Editing layer mask: paint white to reveal, black to hide':'Editing layer pixels')}
+function invertLayerMask(){const l=activeLayer();if(!l||!l.mask)return;if(l.locked){showToast('Unlock this layer before inverting its mask');return}commit('Before invert layer mask');const ctx=l.mask.getContext('2d'),img=ctx.getImageData(0,0,docW,docH),d=img.data;for(let i=3;i<d.length;i+=4)d[i]=255-d[i];ctx.putImageData(img,0,0);invalidateLayerComposite(l);render();showToast('Layer mask inverted')}
+function applyLayerMask(){const l=activeLayer();if(!l||!l.mask)return;if(l.locked){showToast('Unlock this layer before applying its mask');return}commit('Before apply layer mask');const ctx=l.canvas.getContext('2d');ctx.save();ctx.globalCompositeOperation='destination-in';ctx.drawImage(l.mask,0,0);ctx.restore();l.mask=null;l.editMask=false;l._maskComposite=null;render();showToast('Mask applied to layer pixels')}
+function removeLayerMask(){const l=activeLayer();if(!l||!l.mask)return;if(l.locked){showToast('Unlock this layer before removing its mask');return}commit('Before remove layer mask');l.mask=null;l.editMask=false;l._maskComposite=null;render();showToast('Layer mask removed')}
+function render(updateLayerPanel=true){dctx.clearRect(0,0,docW,docH);for(const l of layers){if(!l.visible)continue;dctx.save();dctx.globalAlpha=l.opacity/100;dctx.globalCompositeOperation=l.blend||'source-over';dctx.drawImage(renderedLayerCanvas(l),0,0);dctx.restore()}display.style.width=overlay.style.width=(docW*zoom)+'px';display.style.height=overlay.style.height=(docH*zoom)+'px';stage.style.width=(docW*zoom)+'px';stage.style.height=(docH*zoom)+'px';drawOverlay();if(updateLayerPanel)renderLayers();updateTitle()}
+function drawOverlay(){octx.clearRect(0,0,docW,docH);if(selection){octx.save();octx.setLineDash([7,4]);octx.lineWidth=1.4/zoom;octx.strokeStyle='#ffffff';if(selection.path){octx.beginPath();octx.moveTo(selection.path[0].x,selection.path[0].y);selection.path.forEach(p=>octx.lineTo(p.x,p.y));octx.closePath();octx.stroke();octx.lineDashOffset=4;octx.strokeStyle='#1b1c20';octx.stroke()}else{octx.strokeRect(selection.x,selection.y,selection.w,selection.h);octx.lineDashOffset=4;octx.strokeStyle='#1b1c20';octx.strokeRect(selection.x,selection.y,selection.w,selection.h)}octx.restore()}if(cropRect){octx.save();octx.fillStyle='#0008';octx.fillRect(0,0,docW,docH);octx.clearRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);octx.setLineDash([6,3]);octx.lineWidth=1.4/zoom;octx.strokeStyle='#fff';octx.strokeRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);octx.restore()}if(gridOn){octx.save();octx.strokeStyle='#ffffff22';octx.lineWidth=1/zoom;const step=50;for(let x=step;x<docW;x+=step){octx.beginPath();octx.moveTo(x,0);octx.lineTo(x,docH);octx.stroke()}for(let y=step;y<docH;y+=step){octx.beginPath();octx.moveTo(0,y);octx.lineTo(docW,y);octx.stroke()}octx.restore()}}
+function renderLayers(){
+  const list=$('layerList');list.innerHTML='';
+  [...layers].reverse().forEach(l=>{
+    const row=document.createElement('div');row.className='layer-row'+(l.id===activeId?' active':'')+(l.editMask?' mask-editing':'');row.draggable=true;row.dataset.layerId=l.id;
+    row.innerHTML=`<button class="visibility" title="Toggle visibility" aria-label="Toggle visibility">${l.visible?'◉':'◌'}</button><div class="thumb"><canvas width="72" height="68"></canvas></div><div class="layer-meta"><div class="layer-name"></div><div class="layer-type">${l.type==='text'?'TYPE LAYER':l.type==='image'?'IMAGE LAYER':'PIXEL LAYER'}</div></div><button class="layer-lock ${l.locked?'locked':''}" title="${l.locked?'Unlock layer':'Lock layer'}" aria-label="${l.locked?'Unlock layer':'Lock layer'}">${l.locked?'🔒':'♧'}</button>`;
+    row.querySelector('.layer-name').textContent=l.name+(l.mask?'  ◧':'');
+    const tc=row.querySelector('canvas').getContext('2d');tc.clearRect(0,0,72,68);tc.drawImage(renderedLayerCanvas(l),0,0,72,68);
+    row.addEventListener('click',e=>{if(e.target.closest('button'))return;activeId=l.id;renderLayers();syncLayerControls()});
+    row.querySelector('.visibility').addEventListener('click',e=>{e.stopPropagation();commit('Before visibility change');l.visible=!l.visible;render()});
+    row.querySelector('.layer-lock').addEventListener('click',e=>{e.stopPropagation();commit('Before lock change');l.locked=!l.locked;renderLayers();syncLayerControls();showToast(l.locked?'Layer locked':'Layer unlocked')});
+    row.querySelector('.layer-name').addEventListener('dblclick',e=>{e.stopPropagation();renameLayer(l)});
+    row.addEventListener('dragstart',e=>{draggingLayerId=l.id;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',l.id)});
+    row.addEventListener('dragend',()=>{draggingLayerId=null;row.classList.remove('dragging');list.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'))});
+    row.addEventListener('dragover',e=>{e.preventDefault();if(draggingLayerId&&draggingLayerId!==l.id)row.classList.add('drop-target')});
+    row.addEventListener('dragleave',()=>row.classList.remove('drop-target'));
+    row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drop-target');const from=layers.findIndex(x=>x.id===draggingLayerId),to=layers.findIndex(x=>x.id===l.id);if(from<0||to<0||from===to)return;commit('Before reorder layers');const [item]=layers.splice(from,1);layers.splice(to,0,item);activeId=item.id;render();showToast('Layer reordered')});
+    list.appendChild(row);
+  });
+  $('layerOpacity').disabled=!activeLayer();$('blendMode').disabled=!activeLayer();$('toggleLockBtn').disabled=!activeLayer();syncLayerControls();
+}
+function syncLayerControls(){const l=activeLayer();if(!l)return;$('layerOpacity').value=l.opacity;$('layerOpacityOut').textContent=l.opacity+'%';$('blendMode').value=l.blend;$('toggleLockBtn').textContent=l.locked?'Unlock layer':'Lock layer';$('toggleLockBtn').style.background=l.locked?'#66512d':'';$('addMaskBtn').textContent=l.mask?'Mask active':'Add mask';$('editMaskBtn').disabled=!l.mask||l.locked;$('editMaskBtn').textContent=l.editMask?'Edit pixels':'Edit mask';$('invertMaskBtn').disabled=!l.mask||l.locked;$('applyMaskBtn').disabled=!l.mask||l.locked;$('removeMaskBtn').disabled=!l.mask||l.locked;$('hideSelectionMaskBtn').disabled=!selection||l.locked}
+function renameLayer(layer=activeLayer()){if(!layer)return;const name=prompt('Layer name:',layer.name);if(name===null)return;const next=name.trim();if(!next){showToast('Layer name cannot be empty');return}commit('Before rename layer');layer.name=next;renderLayers();showToast('Layer renamed')}
+function applySelectionClip(ctx){if(!selection)return;ctx.beginPath();if(selection.path&&selection.path.length>2){ctx.moveTo(selection.path[0].x,selection.path[0].y);for(let i=1;i<selection.path.length;i++)ctx.lineTo(selection.path[i].x,selection.path[i].y);ctx.closePath()}else{ctx.rect(selection.x,selection.y,selection.w,selection.h)}ctx.clip()}
+function isInsideSelection(x,y){if(!selection)return true;if(!selection.path)return x>=selection.x&&y>=selection.y&&x<=selection.x+selection.w&&y<=selection.y+selection.h;let inside=false;const pts=selection.path;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const xi=pts[i].x,yi=pts[i].y,xj=pts[j].x,yj=pts[j].y;const hit=((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);if(hit)inside=!inside}return inside}
+function selectAll(){selection={x:0,y:0,w:docW,h:docH};cropRect=null;drawOverlay();syncLayerControls();showToast('Entire canvas selected')}
+function deselect(){selection=null;drawOverlay();syncLayerControls();showToast('Selection cleared')}
+function selectionBounds(){if(!selection)return{x:0,y:0,w:docW,h:docH};return{x:Math.max(0,Math.floor(selection.x)),y:Math.max(0,Math.floor(selection.y)),w:Math.max(1,Math.min(docW-Math.floor(selection.x),Math.ceil(selection.w))),h:Math.max(1,Math.min(docH-Math.floor(selection.y),Math.ceil(selection.h)))}}
+function copySelection(cut=false){const l=activeLayer();if(!l)return;if(l.editMask){showToast('Switch to Edit pixels before copying');return}if(cut&&l.locked){showToast('Unlock this layer before cutting');return}const b=selectionBounds(),c=document.createElement('canvas');c.width=b.w;c.height=b.h;const x=c.getContext('2d');if(selection)applySelectionClipTranslated(x,-b.x,-b.y);x.drawImage(l.canvas,-b.x,-b.y);clipboardCanvas=c;clipboardX=b.x;clipboardY=b.y;if(cut){commit('Before cut');const ctx=l.canvas.getContext('2d');ctx.save();applySelectionClip(ctx);ctx.clearRect(b.x,b.y,b.w,b.h);ctx.restore();render()}showToast(cut?'Selection cut':'Copied to PixelForge clipboard')}
+function applySelectionClipTranslated(ctx,dx,dy){if(!selection)return;ctx.beginPath();if(selection.path&&selection.path.length>2){ctx.moveTo(selection.path[0].x+dx,selection.path[0].y+dy);for(let i=1;i<selection.path.length;i++)ctx.lineTo(selection.path[i].x+dx,selection.path[i].y+dy);ctx.closePath()}else{ctx.rect(selection.x+dx,selection.y+dy,selection.w,selection.h)}ctx.clip()}
+function pasteClipboard(){if(!clipboardCanvas){showToast('Nothing copied yet');return}commit('Before paste');const l=makeLayer('Pasted layer','image');l.canvas.getContext('2d').drawImage(clipboardCanvas,clipboardX,clipboardY);layers.push(l);activeId=l.id;selection=null;render();showToast('Pasted as a new layer')}
+function clearSelection(){const l=activeLayer();if(!l||l.locked){showToast(l?.locked?'Unlock this layer first':'No active layer');return}if(!selection)return;const b=selectionBounds();commit('Before clear selection');const ctx=paintTarget(l).getContext('2d');ctx.save();applySelectionClip(ctx);ctx.clearRect(b.x,b.y,b.w,b.h);ctx.restore();invalidateLayerComposite(l);render();showToast('Selected pixels cleared')}
+function setZoom(z){zoom=Math.min(4,Math.max(.1,z));stage.style.width=(docW*zoom)+'px';stage.style.height=(docH*zoom)+'px';display.style.width=overlay.style.width=(docW*zoom)+'px';display.style.height=overlay.style.height=(docH*zoom)+'px';$('zoomValue').value=Math.round(zoom*100)+'%'}
+function fitCanvas(){const r=viewport.getBoundingClientRect();setZoom(Math.max(.1,Math.min((r.width-72)/docW,(r.height-72)/docH,1)));}
+function updateTool(){document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));const maskMode=!!activeLayer()?.editMask,maskTool=maskMode&&['brush','pencil','eraser','fill','rectangle','ellipse','line'].includes(tool),label=(maskTool?'Mask · ':'')+(toolNames[tool]||tool);$('toolTitle').textContent=label;$('activeToolLabel').textContent=label;stage.style.cursor=tool==='text'?'text':tool==='hand'?'grab':tool==='zoom'?'zoom-in':tool==='eyedropper'?'crosshair':tool==='move'?'move':'crosshair';$('canvasHint').textContent=tool==='crop'?'Drag a crop area, then press Enter to apply · Esc to cancel':tool==='marquee'?'Drag to create a rectangular selection · Delete clears selected pixels':maskTool?'Mask editing: white reveals · black or eraser hides':'Touch to edit · Pinch with two fingers to zoom · Panels for layers and adjustments'}
+function setTool(t){tool=t;updateTool()}
+function point(e){const r=stage.getBoundingClientRect();return{x:Math.max(0,Math.min(docW,(e.clientX-r.left)/zoom)),y:Math.max(0,Math.min(docH,(e.clientY-r.top)/zoom))}}
+function snap(){return {w:docW,h:docH,name:docName,activeId,layers:layers.map(l=>({id:l.id,name:l.name,type:l.type,visible:l.visible,opacity:l.opacity,blend:l.blend,locked:l.locked,editMask:false,data:l.canvas.toDataURL('image/png'),maskData:l.mask?l.mask.toDataURL('image/png'):null}))}}
+function commit(label='Edit'){history=history.slice(0,historyIndex+1);historyLabels=historyLabels.slice(0,historyIndex+1);history.push(snap());historyLabels.push(label.replace(/^Before /,''));if(history.length>maxHistory){history.shift();historyLabels.shift()}historyIndex=history.length-1;redoStack=[];lastAction=label;updateHistoryUI();$('saveState').textContent='Unsaved changes'}
+async function loadCanvasData(data,w,h){const c=document.createElement('canvas');c.width=w;c.height=h;if(data){const ctx=c.getContext('2d');await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{ctx.drawImage(im,0,0,w,h);resolve()};im.onerror=reject;im.src=data})}return c}
+async function restore(s){docW=s.w;docH=s.h;docName=s.name||'Untitled design';layers=[];for(const obj of s.layers){const c=await loadCanvasData(obj.data,docW,docH);const mask=obj.maskData?await loadCanvasData(obj.maskData,docW,docH):null;layers.push({...obj,canvas:c,mask,editMask:false,_maskComposite:null,_maskCompositeDirty:true})}activeId=layers.some(l=>l.id===s.activeId)?s.activeId:(layers.at(-1)?.id||null);selection=null;cropRect=null;resizeCanvases();render();updateHistoryUI()}
+function updateHistoryUI(){
+  const list=$('historyList');if(!list)return;list.innerHTML='';
+  const start=Math.max(0,historyLabels.length-16);
+  if(!historyLabels.length){list.innerHTML='<div class="hint">No actions yet.</div>';return}
+  for(let i=historyLabels.length-1;i>=start;i--){const row=document.createElement('button');row.className='dropitem history-entry'+(i===historyIndex?' current':'');row.style.width='100%';row.textContent=historyLabels[i];row.title='Restore this point in the history';row.addEventListener('click',async()=>{if(i<historyIndex){while(historyIndex>i)await undo()}else if(i>historyIndex){showToast('Use Redo to move forward through history')} });list.appendChild(row)}
+  $('undoBtn').style.opacity=historyIndex>0?'1':'.4';$('redoBtn').style.opacity=redoStack.length?'1':'.4';
+}
+async function undo(){if(historyIndex<=0)return;const cur=snap();redoStack.push(cur);const prev=history[historyIndex];historyIndex--;await restore(prev);showToast('Undo: '+(historyLabels[historyIndex+1]||'Edit'));updateHistoryUI()}
+async function redo(){if(!redoStack.length)return;const s=redoStack.pop();historyIndex++;if(history[historyIndex])history[historyIndex]=s;else{history.push(s);historyLabels.push('Redo edit')}await restore(s);showToast('Redo');updateHistoryUI()}
+function addLayer(name='Layer'){commit('Before new layer');const l=makeLayer(name);layers.push(l);activeId=l.id;render();showToast('Layer added')}
+function duplicateLayer(){const l=activeLayer();if(!l)return;commit('Before duplicate layer');const n=makeLayer(l.name+' copy',l.type);n.canvas.getContext('2d').drawImage(l.canvas,0,0);if(l.mask){n.mask=document.createElement('canvas');n.mask.width=docW;n.mask.height=docH;n.mask.getContext('2d').drawImage(l.mask,0,0)}n.opacity=l.opacity;n.blend=l.blend;n.locked=false;invalidateLayerComposite(n);layers.splice(layers.indexOf(l)+1,0,n);activeId=n.id;render();showToast('Layer duplicated')}
+function deleteLayer(){if(layers.length<=1){showToast('Keep at least one layer');return}const i=layers.findIndex(l=>l.id===activeId);if(i<0)return;commit('Before delete layer');layers.splice(i,1);activeId=layers[Math.max(0,i-1)].id;render();showToast('Layer deleted')}
+function moveLayer(dir){const i=layers.findIndex(l=>l.id===activeId),j=i+dir;if(i<0||j<0||j>=layers.length)return;commit('Before reorder layers');[layers[i],layers[j]]=[layers[j],layers[i]];render();}
+function clearLayer(){const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before clearing it');return}commit('Before clear layer');paintTarget(l).getContext('2d').clearRect(0,0,docW,docH);invalidateLayerComposite(l);render();showToast('Layer cleared')}
+function flatten(){if(layers.length<2)return;commit('Before flatten');const c=document.createElement('canvas');c.width=docW;c.height=docH;const x=c.getContext('2d');for(const l of layers){if(!l.visible)continue;x.globalAlpha=l.opacity/100;x.globalCompositeOperation=l.blend;x.drawImage(renderedLayerCanvas(l),0,0)}const merged=makeLayer('Flattened image','image');merged.canvas.getContext('2d').drawImage(c,0,0);layers=[merged];activeId=merged.id;render();showToast('Layers flattened')}
+function drawSample(){docW=1200;docH=800;layers=[];const bg=makeLayer('Aurora background','image');let c=bg.canvas.getContext('2d');let g=c.createLinearGradient(0,0,1200,800);g.addColorStop(0,'#101b34');g.addColorStop(.52,'#263c63');g.addColorStop(1,'#5e477b');c.fillStyle=g;c.fillRect(0,0,1200,800);let glow=c.createRadialGradient(830,260,20,830,260,550);glow.addColorStop(0,'#d4b8ed99');glow.addColorStop(1,'#a3c5fa00');c.fillStyle=glow;c.fillRect(0,0,1200,800);for(let i=0;i<90;i++){const x=(i*173)%1200,y=(i*97)%800,r=(i%3)+1;c.fillStyle=`rgba(255,255,255,${.15+(i%5)*.08})`;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}c.fillStyle='#101d35';c.beginPath();c.moveTo(0,600);c.lineTo(250,350);c.lineTo(450,590);c.lineTo(690,300);c.lineTo(1000,620);c.lineTo(1200,450);c.lineTo(1200,800);c.lineTo(0,800);c.fill();c.fillStyle='#0c172b';c.beginPath();c.moveTo(0,680);c.lineTo(300,500);c.lineTo(560,700);c.lineTo(850,480);c.lineTo(1200,700);c.lineTo(1200,800);c.lineTo(0,800);c.fill();layers.push(bg);const text=makeLayer('Typography','text');c=text.canvas.getContext('2d');c.fillStyle='#ffffff';c.font='700 94px Arial';c.fillText('FIND YOUR',92,210);c.fillText('OWN LIGHT.',92,310);c.fillStyle='#b9d2ff';c.font='500 24px Arial';c.fillText('A LITTLE SPACE TO CREATE SOMETHING BEAUTIFUL',98,365);c.fillStyle='#ffffffaa';c.fillRect(98,410,88,4);c.font='500 17px Arial';c.fillText('PIXELFORGE  /  CREATIVE STUDIES',98,455);layers.push(text);activeId=text.id;docName='Aurora — sample project';resizeCanvases();commit('Sample project created');fitCanvas()}
+function newDocument(w,h,bg,name){docW=w;docH=h;docName=name||'Untitled design';layers=[];const l=makeLayer(bg==='transparent'?'Layer 1':'Background');if(bg!=='transparent'){const c=l.canvas.getContext('2d');c.fillStyle=bg;c.fillRect(0,0,w,h)}layers.push(l);activeId=l.id;selection=null;cropRect=null;history=[];historyLabels=[];historyIndex=-1;redoStack=[];resizeCanvases();commit('New document');fitCanvas();showToast('New document ready')}
+function importImage(file,asLayer=false){if(!file)return;const url=URL.createObjectURL(file);const im=new Image();im.onload=()=>{if(!asLayer||!layers.length){commit('Before opening image');docW=im.naturalWidth;docH=im.naturalHeight;layers=[]}else{commit('Before placing image')}const l=makeLayer(file.name.replace(/\.[^.]+$/,'')||'Image','image');const scale=Math.min(docW/im.naturalWidth,docH/im.naturalHeight,1);const w=im.naturalWidth*scale,h=im.naturalHeight*scale;l.canvas.getContext('2d').drawImage(im,(docW-w)/2,(docH-h)/2,w,h);layers.push(l);activeId=l.id;docName=file.name.replace(/\.[^.]+$/,'')||'Image project';selection=null;resizeCanvases();fitCanvas();showToast('Image loaded');URL.revokeObjectURL(url)};im.onerror=()=>showToast('Could not open this image');im.src=url}
+function exportImage(){ $('exportModal').classList.add('open') }
+function downloadExport(){const fmt=$('exportFormat').value,q=Number($('exportQuality').value),out=document.createElement('canvas');out.width=docW;out.height=docH;const x=out.getContext('2d');if(fmt==='jpeg'){x.fillStyle='#fff';x.fillRect(0,0,docW,docH)}for(const l of layers){if(!l.visible)continue;x.globalAlpha=l.opacity/100;x.globalCompositeOperation=l.blend;x.drawImage(renderedLayerCanvas(l),0,0)}const mime=fmt==='jpeg'?'image/jpeg':`image/${fmt}`;out.toBlob(blob=>{if(!blob){showToast('Export failed');return}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(docName||'pixelforge-artwork').replace(/[^a-z0-9-_]+/gi,'-')+'.'+fmt;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);$('exportModal').classList.remove('open');showToast('Image exported')},mime,q)}
+function saveProject(){const data=JSON.stringify({format:'PixelForgeProject',version:3,...snap()});const blob=new Blob([data],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(docName||'project').replace(/[^a-z0-9-_]+/gi,'-')+'.pfs';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);$('saveState').textContent='Project saved';showToast('Editable project saved')}
+async function loadProject(file){try{const s=JSON.parse(await file.text());if(s.format!=='PixelForgeProject'||!Array.isArray(s.layers)||!Number.isInteger(s.w)||!Number.isInteger(s.h)||s.w<1||s.h<1||s.w>6000||s.h>6000)throw Error('Unsupported project');await restore(s);history=[];historyLabels=[];historyIndex=-1;redoStack=[];commit('Project opened');fitCanvas();showToast('Project opened')}catch(e){showToast('Could not read this project file')}}
+function applyFilter(type){const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before applying a filter');return}if(l.editMask){showToast('Switch to Edit pixels before applying a filter');return}commit('Before '+type);const c=l.canvas,ctx=c.getContext('2d');if(type==='blur'){const original=document.createElement('canvas');original.width=docW;original.height=docH;original.getContext('2d').drawImage(c,0,0);const tmp=document.createElement('canvas');tmp.width=docW;tmp.height=docH;const tx=tmp.getContext('2d');tx.filter='blur(3px)';tx.drawImage(c,0,0);ctx.clearRect(0,0,docW,docH);ctx.drawImage(original,0,0);ctx.save();applySelectionClip(ctx);ctx.drawImage(tmp,0,0);ctx.restore()}else if(type==='sharpen'){const img=ctx.getImageData(0,0,docW,docH),d=img.data,src=new Uint8ClampedArray(d),w=docW,h=docH;for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){if(!isInsideSelection(x,y))continue;let i=(y*w+x)*4;for(let k=0;k<3;k++){d[i+k]=Math.max(0,Math.min(255,5*src[i+k]-src[i-4+k]-src[i+4+k]-src[i-w*4+k]-src[i+w*4+k]))}}ctx.putImageData(img,0,0)}else{const img=ctx.getImageData(0,0,docW,docH),d=img.data;for(let y=0;y<docH;y++)for(let x=0;x<docW;x++){if(!isInsideSelection(x,y))continue;const i=(y*docW+x)*4,r=d[i],g=d[i+1],b=d[i+2];if(type==='invert'){d[i]=255-r;d[i+1]=255-g;d[i+2]=255-b}else if(type==='grayscale'){const v=.299*r+.587*g+.114*b;d[i]=d[i+1]=d[i+2]=v}else if(type==='sepia'){d[i]=Math.min(255,.393*r+.769*g+.189*b);d[i+1]=Math.min(255,.349*r+.686*g+.168*b);d[i+2]=Math.min(255,.272*r+.534*g+.131*b)}else if(type==='vintage'){d[i]=Math.min(255,r*.92+15);d[i+1]=Math.min(255,g*.82+11);d[i+2]=Math.min(255,b*.66+5)}}ctx.putImageData(img,0,0)}invalidateLayerComposite(l);render();showToast(type[0].toUpperCase()+type.slice(1)+' applied')}
+function applyAdjust(){const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before adjusting it');return}if(l.editMask){showToast('Switch to Edit pixels before adjusting');return}const b=+$('brightness').value,ct=+$('contrast').value,s=+$('saturation').value,hue=+$('hue').value;if(!b&&!ct&&!s&&!hue){showToast('No adjustment values changed');return}commit('Before tonal adjustment');const ctx=l.canvas.getContext('2d'),img=ctx.getImageData(0,0,docW,docH),d=img.data,contrast=(259*(ct+255))/(255*(259-ct)),angle=hue*Math.PI/180,cos=Math.cos(angle),sin=Math.sin(angle);for(let i=0;i<d.length;i+=4){const px=(i/4)%docW,py=Math.floor(i/(docW*4));if(!isInsideSelection(px,py))continue;let r=d[i]+b,g=d[i+1]+b,bl=d[i+2]+b;r=contrast*(r-128)+128;g=contrast*(g-128)+128;bl=contrast*(bl-128)+128;const avg=.299*r+.587*g+.114*bl,fac=1+s/100;r=avg+(r-avg)*fac;g=avg+(g-avg)*fac;bl=avg+(bl-avg)*fac;const nr=(.213+cos*.787-sin*.213)*r+(.715-cos*.715-sin*.715)*g+(.072-cos*.072+sin*.928)*bl,ng=(.213-cos*.213+sin*.143)*r+(.715+cos*.285+sin*.140)*g+(.072-cos*.072-sin*.283)*bl,nb=(.213-cos*.213-sin*.787)*r+(.715-cos*.715+sin*.715)*g+(.072+cos*.928+sin*.072)*bl;d[i]=Math.max(0,Math.min(255,nr));d[i+1]=Math.max(0,Math.min(255,ng));d[i+2]=Math.max(0,Math.min(255,nb))}ctx.putImageData(img,0,0);invalidateLayerComposite(l);render();showToast('Adjustments applied')}
+function applyCrop(){if(!cropRect)return;let {x,y,w,h}=cropRect;x=Math.max(0,Math.min(docW-1,Math.round(x)));y=Math.max(0,Math.min(docH-1,Math.round(y)));w=Math.max(1,Math.min(docW-x,Math.round(w)));h=Math.max(1,Math.min(docH-y,Math.round(h)));if(w<2||h<2){cropRect=null;drawOverlay();showToast('Crop area is too small');return}commit('Before crop');layers.forEach(l=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(l.canvas,x,y,w,h,0,0,w,h);l.canvas=c;if(l.mask){const m=document.createElement('canvas');m.width=w;m.height=h;m.getContext('2d').drawImage(l.mask,x,y,w,h,0,0,w,h);l.mask=m}invalidateLayerComposite(l)});docW=w;docH=h;cropRect=null;selection=null;resizeCanvases();fitCanvas();showToast('Crop applied')}
+function rotateCanvas(){commit('Before rotate');layers.forEach(l=>{const c=document.createElement('canvas');c.width=docH;c.height=docW;const x=c.getContext('2d');x.translate(c.width/2,c.height/2);x.rotate(Math.PI/2);x.drawImage(l.canvas,-docW/2,-docH/2);l.canvas=c;if(l.mask){const m=document.createElement('canvas');m.width=docH;m.height=docW;const mx=m.getContext('2d');mx.translate(m.width/2,m.height/2);mx.rotate(Math.PI/2);mx.drawImage(l.mask,-docW/2,-docH/2);l.mask=m}invalidateLayerComposite(l)});[docW,docH]=[docH,docW];resizeCanvases();fitCanvas()}
+function flipCanvas(horizontal){commit(horizontal?'Before flip horizontal':'Before flip vertical');layers.forEach(l=>{const c=document.createElement('canvas');c.width=docW;c.height=docH;const x=c.getContext('2d');x.translate(horizontal?docW:0,horizontal?0:docH);x.scale(horizontal?-1:1,horizontal?1:-1);x.drawImage(l.canvas,0,0);l.canvas=c;if(l.mask){const m=document.createElement('canvas');m.width=docW;m.height=docH;const mx=m.getContext('2d');mx.translate(horizontal?docW:0,horizontal?0:docH);mx.scale(horizontal?-1:1,horizontal?1:-1);mx.drawImage(l.mask,0,0);l.mask=m}invalidateLayerComposite(l)});render()}
+function resizeImage(w,h){if(!w||!h||w>6000||h>6000){showToast('Please enter dimensions from 1 to 6000 px');return}commit('Before image resample');layers.forEach(l=>{const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(l.canvas,0,0,w,h);l.canvas=c;if(l.mask){const m=document.createElement('canvas');m.width=w;m.height=h;const mx=m.getContext('2d');mx.imageSmoothingEnabled=true;mx.imageSmoothingQuality='high';mx.drawImage(l.mask,0,0,w,h);l.mask=m}invalidateLayerComposite(l)});docW=w;docH=h;selection=null;cropRect=null;resizeCanvases();fitCanvas();$('imageSizeModal').classList.remove('open');showToast('Image resampled')}
+function resizeDoc(w,h){if(!w||!h||w>6000||h>6000){showToast('Please enter dimensions from 1 to 6000 px');return}commit('Before canvas resize');layers.forEach(l=>{const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(l.canvas,0,0);l.canvas=c;if(l.mask){const m=document.createElement('canvas');m.width=w;m.height=h;m.getContext('2d').drawImage(l.mask,0,0);l.mask=m}invalidateLayerComposite(l)});docW=w;docH=h;resizeCanvases();fitCanvas();$('resizeModal').classList.remove('open')}
+function addText(x,y){const text=prompt('Enter text for your canvas:','Your text here');if(!text)return;const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before adding text');return}if(l.editMask){showToast('Switch to Edit pixels before adding text');return}commit('Before add text');const ctx=l.canvas.getContext('2d');ctx.save();applySelectionClip(ctx);ctx.globalAlpha=+$('toolOpacity').value/100;ctx.fillStyle=$('fgColor').value;ctx.font=`700 ${Math.max(8,Math.min(300,+$('fontSize').value||64))}px ${$('fontFamily').value}`;ctx.textBaseline='top';ctx.fillText(text,x,y);ctx.restore();invalidateLayerComposite(l);render();showToast('Text added to selected layer')}
+function floodFill(x,y){
+  const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before filling');return}
+  const ix=Math.floor(x),iy=Math.floor(y);if(!isInsideSelection(ix,iy))return;
+  const targetCanvas=paintTarget(l),ctx=targetCanvas.getContext('2d'),img=ctx.getImageData(0,0,docW,docH),d=img.data,start=(iy*docW+ix)*4;
+  const maskMode=!!(l.editMask&&l.mask),hex=$('fgColor').value,r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const target=maskMode?[d[start+3]]:[d[start],d[start+1],d[start+2],d[start+3]];
+  const fillAlpha=maskMode?(maskPaintOperation(l,'brush')==='destination-out'?0:255):255;
+  if(maskMode&&target[0]===fillAlpha){showToast('Already this mask value');return}
+  if(!maskMode&&target[0]===r&&target[1]===g&&target[2]===b&&target[3]===255){showToast('Already this colour');return}
+  const stack=[ix,iy],seen=new Uint8Array(docW*docH),tol=24,limit=docW*docH;let visited=0;
+  while(stack.length&&visited<limit){const cy=stack.pop(),cx=stack.pop();if(cx<0||cy<0||cx>=docW||cy>=docH)continue;const p=cy*docW+cx;if(seen[p])continue;seen[p]=1;visited++;if(!isInsideSelection(cx,cy))continue;const i=p*4;
+    const matches=maskMode?Math.abs(d[i+3]-target[0])<=tol:(Math.abs(d[i]-target[0])<=tol&&Math.abs(d[i+1]-target[1])<=tol&&Math.abs(d[i+2]-target[2])<=tol&&Math.abs(d[i+3]-target[3])<=tol);if(!matches)continue;
+    if(maskMode){d[i]=d[i+1]=d[i+2]=255;d[i+3]=fillAlpha}else{d[i]=r;d[i+1]=g;d[i+2]=b;d[i+3]=255}stack.push(cx+1,cy,cx-1,cy,cx,cy+1,cx,cy-1)
+  }
+  commit('Before fill');ctx.putImageData(img,0,0);invalidateLayerComposite(l);render();showToast(maskMode?'Mask fill applied':'Fill applied');
+}
+function drawShape(layer,kind,a,b){const ctx=paintTarget(layer).getContext('2d');ctx.save();applySelectionClip(ctx);ctx.globalAlpha=+$('toolOpacity').value/100;ctx.globalCompositeOperation=layer.editMask?maskPaintOperation(layer,'shape'):'source-over';ctx.strokeStyle=layer.editMask?'#fff':$('fgColor').value;ctx.fillStyle=layer.editMask?'#fff':$('fgColor').value;ctx.lineWidth=Math.max(1,+$('brushSize').value);ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();if(kind==='rectangle'){ctx.rect(a.x,a.y,b.x-a.x,b.y-a.y)}else if(kind==='ellipse'){ctx.ellipse((a.x+b.x)/2,(a.y+b.y)/2,Math.abs(b.x-a.x)/2,Math.abs(b.y-a.y)/2,0,0,Math.PI*2)}else{ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}if(kind==='line'||$('shapeMode').value==='stroke')ctx.stroke();else ctx.fill();ctx.restore();invalidateLayerComposite(layer)}
+function onDown(e){
+  if(e.pointerType==='touch'){
+    activeTouchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(activeTouchPoints.size===2){
+      const pts=[...activeTouchPoints.values()],dx=pts[0].x-pts[1].x,dy=pts[0].y-pts[1].y;
+      pinchGesture={distance:Math.max(1,Math.hypot(dx,dy)),zoom,centerX:(pts[0].x+pts[1].x)/2,centerY:(pts[0].y+pts[1].y)/2,scrollLeft:viewport.scrollLeft,scrollTop:viewport.scrollTop};
+      isDrawing=false;pointerStart=null;currentPath=[];moveBuffer=null;moveMaskBuffer=null;viewport.dataset.panning='';
+      try{stage.setPointerCapture(e.pointerId)}catch(_){}
+      render();e.preventDefault();return;
+    }
+    if(activeTouchPoints.size>2||pinchGesture)return;
+  }
+  if(pinchGesture)return;
+  if(e.button!==0&&e.pointerType!=='touch')return;const p=point(e);$('cursorPosition').textContent=`X: ${Math.round(p.x)}  Y: ${Math.round(p.y)}`;if(tool==='eyedropper'){const px=dctx.getImageData(Math.floor(p.x),Math.floor(p.y),1,1).data;$('fgColor').value='#'+[px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join('');showToast('Foreground colour sampled');return}if(tool==='text'){addText(p.x,p.y);return}if(tool==='fill'){floodFill(p.x,p.y);return}if(tool==='zoom'){setZoom(zoom*1.25);return}if(tool==='hand'){viewport.dataset.panning='1';pointerStart={clientX:e.clientX,clientY:e.clientY,scrollLeft:viewport.scrollLeft,scrollTop:viewport.scrollTop};stage.setPointerCapture(e.pointerId);return}const l=activeLayer();if(!l)return;if(tool==='move'){if(l.locked){showToast('Unlock this layer before moving it');return}commit('Before move layer');pointerStart={...p,mode:'move'};moveBuffer=document.createElement('canvas');moveBuffer.width=docW;moveBuffer.height=docH;moveBuffer.getContext('2d').drawImage(l.canvas,0,0);moveMaskBuffer=null;if(l.mask){moveMaskBuffer=document.createElement('canvas');moveMaskBuffer.width=docW;moveMaskBuffer.height=docH;moveMaskBuffer.getContext('2d').drawImage(l.mask,0,0)}stage.setPointerCapture(e.pointerId);return}if(tool==='marquee'||tool==='crop'||tool==='lasso'){pointerStart=p;isDrawing=true;currentPath=[p];stage.setPointerCapture(e.pointerId);return}if(l.locked){showToast('This layer is locked');return}if(['brush','pencil','eraser','rectangle','ellipse','line'].includes(tool)){commit('Before '+tool);drawingSnapshot={x:p.x,y:p.y};pointerStart=p;isDrawing=true;stage.setPointerCapture(e.pointerId);if(tool==='brush'||tool==='pencil'||tool==='eraser'){const target=paintTarget(l),ctx=target.getContext('2d');ctx.save();applySelectionClip(ctx);ctx.globalAlpha=+$('toolOpacity').value/100;ctx.globalCompositeOperation=maskPaintOperation(l,tool);ctx.strokeStyle=l.editMask?'#fff':$('fgColor').value;ctx.fillStyle=l.editMask?'#fff':$('fgColor').value;ctx.lineWidth=tool==='pencil'?1:+$('brushSize').value;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+.1,p.y+.1);ctx.stroke();ctx.restore();invalidateLayerComposite(l);render()}}}
+function onMove(e){
+  if(e.pointerType==='touch'&&activeTouchPoints.has(e.pointerId)){
+    activeTouchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinchGesture&&activeTouchPoints.size>=2){
+      const pts=[...activeTouchPoints.values()].slice(0,2),dx=pts[0].x-pts[1].x,dy=pts[0].y-pts[1].y;
+      const cx=(pts[0].x+pts[1].x)/2,cy=(pts[0].y+pts[1].y)/2;
+      setZoom(pinchGesture.zoom*Math.hypot(dx,dy)/pinchGesture.distance);
+      viewport.scrollLeft=pinchGesture.scrollLeft+(pinchGesture.centerX-cx);
+      viewport.scrollTop=pinchGesture.scrollTop+(pinchGesture.centerY-cy);
+      return;
+    }
+  }
+  if(pinchGesture)return;
+  const p=point(e);
+  $('cursorPosition').textContent=`X: ${Math.round(p.x)}  Y: ${Math.round(p.y)}`;
+  if(viewport.dataset.panning==='1'&&pointerStart){
+    viewport.scrollLeft=pointerStart.scrollLeft-(e.clientX-pointerStart.clientX);
+    viewport.scrollTop=pointerStart.scrollTop-(e.clientY-pointerStart.clientY);
+    return;
+  }
+  if(!isDrawing&&!pointerStart)return;
+  const l=activeLayer();
+  if(tool==='move'&&pointerStart?.mode==='move'&&moveBuffer){
+    const dx=p.x-pointerStart.x,dy=p.y-pointerStart.y;
+    const ctx=l.canvas.getContext('2d');
+    ctx.clearRect(0,0,docW,docH);
+    ctx.drawImage(moveBuffer,dx,dy);
+    if(l.mask&&moveMaskBuffer){const mx=l.mask.getContext('2d');mx.clearRect(0,0,docW,docH);mx.drawImage(moveMaskBuffer,dx,dy);invalidateLayerComposite(l)}
+    render(false);
+    return;
+  }
+  if(!isDrawing)return;
+  if(['brush','pencil','eraser'].includes(tool)){
+    const ctx=paintTarget(l).getContext('2d');
+    ctx.save();
+    applySelectionClip(ctx);
+    ctx.globalAlpha=+$('toolOpacity').value/100;
+    ctx.globalCompositeOperation=maskPaintOperation(l,tool);
+    ctx.strokeStyle=l.editMask?'#fff':$('fgColor').value;
+    ctx.lineWidth=tool==='pencil'?1:+$('brushSize').value;
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+    ctx.moveTo(pointerStart.x,pointerStart.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();
+    invalidateLayerComposite(l);pointerStart=p;render(false);
+  }else if(['marquee','crop'].includes(tool)){
+    const x=Math.min(pointerStart.x,p.x),y=Math.min(pointerStart.y,p.y);
+    const w=Math.abs(pointerStart.x-p.x),h=Math.abs(pointerStart.y-p.y);
+    if(tool==='crop')cropRect={x,y,w,h};else selection={x,y,w,h};
+    drawOverlay();if(tool==='marquee')syncLayerControls();
+  }else if(tool==='lasso'){
+    currentPath.push(p);octx.clearRect(0,0,docW,docH);octx.save();
+    octx.strokeStyle='#fff';octx.lineWidth=1/zoom;octx.setLineDash([4,3]);octx.beginPath();
+    octx.moveTo(currentPath[0].x,currentPath[0].y);currentPath.forEach(q=>octx.lineTo(q.x,q.y));
+    octx.stroke();octx.restore();
+  }else if(['rectangle','ellipse','line'].includes(tool)){
+    octx.clearRect(0,0,docW,docH);octx.save();
+    octx.globalAlpha=+$('toolOpacity').value/100;octx.strokeStyle=$('fgColor').value;
+    octx.fillStyle=$('fgColor').value;octx.lineWidth=Math.max(1,+$('brushSize').value);octx.beginPath();
+    if(tool==='rectangle')octx.rect(pointerStart.x,pointerStart.y,p.x-pointerStart.x,p.y-pointerStart.y);
+    else if(tool==='ellipse')octx.ellipse((pointerStart.x+p.x)/2,(pointerStart.y+p.y)/2,Math.abs(p.x-pointerStart.x)/2,Math.abs(p.y-pointerStart.y)/2,0,0,Math.PI*2);
+    else{octx.moveTo(pointerStart.x,pointerStart.y);octx.lineTo(p.x,p.y);}
+    if(tool==='line'||$('shapeMode').value==='stroke')octx.stroke();else octx.fill();
+    octx.restore();
+  }
+}
+function onUp(e){
+  if(e.pointerType==='touch'){
+    activeTouchPoints.delete(e.pointerId);
+    if(pinchGesture){
+      if(activeTouchPoints.size<2){pinchGesture=null;isDrawing=false;pointerStart=null;currentPath=[];moveBuffer=null;moveMaskBuffer=null;render();}
+      return;
+    }
+  }
+  if(viewport.dataset.panning==='1'){viewport.dataset.panning='';pointerStart=null;return}if(tool==='move'&&pointerStart?.mode==='move'){pointerStart=null;moveBuffer=null;moveMaskBuffer=null;render();return}if(!isDrawing){pointerStart=null;return}const p=point(e),l=activeLayer();if(tool==='lasso'&&currentPath.length>2){const xs=currentPath.map(a=>a.x),ys=currentPath.map(a=>a.y);selection={x:Math.min(...xs),y:Math.min(...ys),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys),path:currentPath};drawOverlay();syncLayerControls()}else if(tool==='lasso'){selection=null;drawOverlay()}else if(tool==='crop'){drawOverlay()}else if(tool==='marquee'){drawOverlay()}else if(['rectangle','ellipse','line'].includes(tool)){octx.clearRect(0,0,docW,docH);drawShape(l,tool,pointerStart,p);render()}else{render()}isDrawing=false;pointerStart=null;currentPath=[];drawingSnapshot=null}
+stage.addEventListener('pointerdown',onDown);stage.addEventListener('pointermove',onMove);stage.addEventListener('pointerup',onUp);stage.addEventListener('pointercancel',onUp);
+// Menus and tool controls
+$('newBtn').onclick=()=>$('newModal').classList.add('open');$('openBtn').onclick=()=>$('imageInput').click();$('exportBtn').onclick=exportImage;$('undoBtn').onclick=undo;$('redoBtn').onclick=redo;$('projectInput').onchange=e=>{const f=e.target.files[0];if(f)loadProject(f);e.target.value=''};
+$('createDocBtn').onclick=()=>{const w=+$('newWidth').value,h=+$('newHeight').value;if(!w||!h||w>6000||h>6000){showToast('Use dimensions from 1 to 6000 px');return}newDocument(w,h,$('newBg').value,$('newName').value);$('newModal').classList.remove('open')};$('downloadExport').onclick=downloadExport;$('addLayerBtn').onclick=()=>addLayer();$('duplicateLayerBtn').onclick=duplicateLayer;$('renameLayerBtn').onclick=()=>renameLayer();$('toggleLockBtn').onclick=()=>{const l=activeLayer();if(!l)return;commit('Before lock change');l.locked=!l.locked;renderLayers();showToast(l.locked?'Layer locked':'Layer unlocked')};$('addMaskBtn').onclick=addLayerMask;$('editMaskBtn').onclick=toggleMaskEditing;$('invertMaskBtn').onclick=invertLayerMask;$('applyMaskBtn').onclick=applyLayerMask;$('removeMaskBtn').onclick=removeLayerMask;$('hideSelectionMaskBtn').onclick=hideSelectionWithMask;$('deleteLayerBtn').onclick=deleteLayer;$('layerUpBtn').onclick=()=>moveLayer(1);$('layerDownBtn').onclick=()=>moveLayer(-1);$('layerOpacity').oninput=e=>{const l=activeLayer();if(l){l.opacity=+e.target.value;$('layerOpacityOut').textContent=l.opacity+'%';render()}};$('layerOpacity').onpointerdown=()=>commit('Before layer opacity');$('layerOpacity').onchange=()=>{};$('blendMode').onchange=e=>{const l=activeLayer();if(l){commit('Change blend mode');l.blend=e.target.value;render()}};
+$('toolOpacity').oninput=e=>$('opacityValue').textContent=e.target.value+'%';$('applyAdjustments').onclick=applyAdjust;['brightness','contrast','saturation','hue'].forEach(id=>$(id).oninput=e=>$(id+'Out').textContent=e.target.value+(id==='hue'?'°':''));$('resizeDocBtn').onclick=()=>resizeDoc(+$('resizeWidth').value,+$('resizeHeight').value);$('resizeImageBtn').onclick=()=>resizeImage(+$('imageWidth').value,+$('imageHeight').value);$('imageWidth').oninput=()=>{if($('keepAspect').checked){const w=+$('imageWidth').value;if(w>0)$('imageHeight').value=Math.max(1,Math.round(w*docH/docW))}};$('imageHeight').oninput=()=>{if($('keepAspect').checked){const h=+$('imageHeight').value;if(h>0)$('imageWidth').value=Math.max(1,Math.round(h*docW/docH))}};
+$('zoomIn').onclick=()=>setZoom(zoom*1.2);$('zoomOut').onclick=()=>setZoom(zoom/1.2);$('fitBtn').onclick=fitCanvas;$('fitBtn').title='Fit on screen';$('zoomValue').onchange=e=>{const z=parseFloat(e.target.value);if(z>0)setZoom(z/100);else e.target.value=Math.round(zoom*100)+'%'};$('fitBtn').onclick=fitCanvas;$('canvasViewport').addEventListener('wheel',e=>{if(e.ctrlKey){e.preventDefault();setZoom(zoom*(e.deltaY<0?1.1:.9))}},{passive:false});
+document.querySelectorAll('.tool[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));['layers','adjust','history'].forEach(t=>$(t+'Panel').hidden=t!==b.dataset.tab)});
+document.querySelectorAll('.menuslot > .menuitem').forEach(b=>b.onclick=e=>{const p=b.parentElement;document.querySelectorAll('.menuslot').forEach(m=>{if(m!==p)m.classList.remove('open')});p.classList.toggle('open');e.stopPropagation()});document.addEventListener('click',()=>document.querySelectorAll('.menuslot').forEach(m=>m.classList.remove('open')));
+document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{const a=b.dataset.action;switch(a){case'new':$('newModal').classList.add('open');break;case'open':$('imageInput').click();break;case'import':$('imageInput').dataset.asLayer='1';$('imageInput').click();break;case'export':exportImage();break;case'undo':undo();break;case'redo':redo();break;case'duplicate':duplicateLayer();break;case'delete':deleteLayer();break;case'clear':clearLayer();break;case'copy':copySelection(false);break;case'cut':copySelection(true);break;case'paste':pasteClipboard();break;case'selectAll':selectAll();break;case'deselect':deselect();break;case'addLayer':addLayer();break;case'up':moveLayer(1);break;case'down':moveLayer(-1);break;case'flatten':flatten();break;case'fit':fitCanvas();break;case'actual':setZoom(1);break;case'grid':gridOn=!gridOn;drawOverlay();break;case'resize':$('resizeWidth').value=docW;$('resizeHeight').value=docH;$('resizeModal').classList.add('open');break;case'imageSize':$('imageWidth').value=docW;$('imageHeight').value=docH;$('imageSizeModal').classList.add('open');break;case'rotate':rotateCanvas();break;case'flipH':flipCanvas(true);break;case'flipV':flipCanvas(false);break;case'projectSave':saveProject();break;case'projectLoad':$('projectInput').click();break}});
+$('imageInput').addEventListener('change',e=>{const f=e.target.files[0];if(f){const asLayer=e.target.dataset.asLayer==='1';delete e.target.dataset.asLayer;importImage(f,asLayer)}e.target.value=''});
+document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>applyFilter(b.dataset.filter));document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+window.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea,[contenteditable="true"]'))return;
+  const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
+  if(mod&&key==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
+  if(mod&&key==='y'){e.preventDefault();redo();return}
+  if(mod&&key==='o'){e.preventDefault();$('imageInput').click();return}
+  if(mod&&key==='n'){e.preventDefault();$('newModal').classList.add('open');return}
+  if(mod&&key==='s'){e.preventDefault();saveProject();return}
+  if(mod&&e.shiftKey&&key==='e'){e.preventDefault();exportImage();return}
+  if(mod&&key==='c'){e.preventDefault();copySelection(false);return}
+  if(mod&&key==='x'){e.preventDefault();copySelection(true);return}
+  if(mod&&key==='v'){e.preventDefault();pasteClipboard();return}
+  if(mod&&key==='a'){e.preventDefault();selectAll();return}
+  if(mod&&key==='d'){e.preventDefault();deselect();return}
+  if(e.key==='Escape'){selection=null;cropRect=null;drawOverlay();syncLayerControls();return}
+  if(e.key==='Enter'&&cropRect){applyCrop();return}
+  if(e.key==='Delete'&&selection){e.preventDefault();clearSelection();return}
+  if(e.key==='['){$('brushSize').value=Math.max(1,+$('brushSize').value-3);return}
+  if(e.key===']'){$('brushSize').value=Math.min(300,+$('brushSize').value+3);return}
+  const t=toolKeys[key];if(t)setTool(t);
+});
+// Mobile panels drawer and installable PWA support
+const sidePanel=document.querySelector('.sidepanel'),panelScrim=$('panelScrim');
+function setPanelsOpen(open){sidePanel.classList.toggle('panel-open',!!open);panelScrim.classList.toggle('visible',!!open);$('panelToggle').setAttribute('aria-expanded',String(!!open));}
+$('panelToggle').onclick=()=>setPanelsOpen(!sidePanel.classList.contains('panel-open'));
+panelScrim.onclick=()=>setPanelsOpen(false);
+document.querySelectorAll('.sidepanel .tab').forEach(b=>b.addEventListener('click',()=>setPanelsOpen(true)));
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;$('installBtn').hidden=false;});
+$('installBtn').onclick=async()=>{
+  if(!deferredInstallPrompt){showToast('Use your browser menu and choose Install app or Add to Home screen');return;}
+  deferredInstallPrompt.prompt();
+  try{await deferredInstallPrompt.userChoice;}catch(_){}
+  deferredInstallPrompt=null;$('installBtn').hidden=true;
+};
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;$('installBtn').hidden=true;showToast('PixelForge installed');});
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>showToast('Offline setup will be available after hosting this app over HTTPS')));
+}
+window.addEventListener('orientationchange',()=>setTimeout(()=>fitCanvas(),180));
+// starter project
+function boot(){drawSample();setTool('move');$('saveState').textContent='Local editing';requestAnimationFrame(()=>fitCanvas());}
+boot();
+})();
+</script>
+</body>
+</html>
