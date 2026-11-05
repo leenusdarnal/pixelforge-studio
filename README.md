@@ -10,7 +10,7 @@ PixelForge is an open-source project under the **MIT License**. It runs in the b
 - TypeScript
 - Tailwind CSS 4
 - HTML Canvas API
-- Web Workers for background image processing
+- Web Workers for background image processing (planned; not active yet)
 - IndexedDB for local autosave and recovery
 - Vercel for hosting and deployment
 
@@ -59,9 +59,9 @@ This is a guardrail, not a guarantee that every device can safely handle every 2
 ## Project files
 
 - src/routes/ — SvelteKit application routes
-- src/lib/editor/ — reusable editor utilities
+- src/lib/editor/ — Svelte workbench, markup, styles, runtime and size utilities
 - src/service-worker.ts — offline app-shell and update cache
-- static/legacy/ — temporary compatibility editor during migration
+- static/legacy/ — inactive rollback reference; not used by the active app
 - static/manifest.webmanifest — PWA metadata
 - static/icons/ — app icons
 - tests/ — automated unit tests
