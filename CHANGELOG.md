@@ -3,7 +3,7 @@
 ## 2.4.0 — Direct SvelteKit editor integration
 
 - Removed the active iframe dependency and mounted the editor directly in the SvelteKit route.
-- Separated the workbench into a Svelte component, markup module, stylesheet and editor runtime module.
+- Separated the workbench into a Svelte component, markup module, stylesheet, editor runtime, project contract, IndexedDB storage service and history-budget module.
 - Reworked the editor-to-host bridge to use same-window events for project autosave, recovery and update-safe state capture.
 - Kept the previous iframe page as an inactive rollback reference during migration.
 - Preserved the existing canvas tools, layers, masks, adjustments, editable text and project snapshot behavior.
