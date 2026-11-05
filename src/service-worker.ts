@@ -9,8 +9,13 @@ sw.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
-    await sw.skipWaiting();
   })());
+});
+
+sw.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    event.waitUntil(sw.skipWaiting());
+  }
 });
 
 sw.addEventListener('activate', (event) => {
