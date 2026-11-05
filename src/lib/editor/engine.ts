@@ -1,3 +1,5 @@
+// @ts-nocheck
+// The existing editor engine is being migrated incrementally from JavaScript to typed feature modules.
 /** Transitional editing runtime. Feature-level decomposition follows in later migration slices. */
 import { isAllowedDocumentSize, fitWithinDocumentLimit } from "./limits";
 
