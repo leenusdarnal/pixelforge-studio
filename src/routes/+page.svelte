@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import EditorWorkbench from '$lib/editor/EditorWorkbench.svelte';
   type ProjectSnapshot = { format: 'PixelForgeProject'; version: number; w: number; h: number; name: string; activeId: string | null; layers: unknown[]; [key: string]: unknown };
   type RecoveryRecord = { id: string; savedAt: number; project: ProjectSnapshot };
-  let editorFrame: HTMLIFrameElement;
   let saveStatus = $state('Starting editor…');
   let recovery = $state<RecoveryRecord | null>(null);
   let recoveryError = $state('');
@@ -105,36 +105,37 @@
   }
 
   function restoreRecovery(): void {
-    if (!recovery || !editorFrame?.contentWindow) return;
+    if (!recovery) return;
     saveStatus = 'Restoring local project…';
-    editorFrame.contentWindow.postMessage({ type: 'PIXELFORGE_RESTORE', project: recovery.project }, window.location.origin);
+    window.postMessage({ type: 'PIXELFORGE_RESTORE', project: recovery.project }, window.location.origin);
   }
 
-  function handleMessage(event: MessageEvent): void {
-    if (event.origin !== window.location.origin || event.source !== editorFrame?.contentWindow) return;
-    if (event.data?.type === 'PIXELFORGE_READY') {
-      saveStatus = 'Editor ready · local-only storage';
-      void checkForRecovery();
-    } else if (event.data?.type === 'PIXELFORGE_STATE' && event.data.project?.format === 'PixelForgeProject') {
-      const project = event.data.project as ProjectSnapshot;
-      latestProject = project;
-      if (pendingStateCapture) {
-        const resolve = pendingStateCapture;
-        pendingStateCapture = null;
-        resolve(project);
-      } else {
-        scheduleAutosave(project);
-      }
-    } else if (event.data?.type === 'PIXELFORGE_RESTORED') {
-      recovery = null;
-      saveStatus = 'Recovered · saving locally…';
-      if (latestProject) scheduleAutosave(latestProject);
+  function handleEditorReady(): void {
+    saveStatus = 'Editor ready · local-only storage';
+    void checkForRecovery();
+  }
+
+  function handleEditorState(event: Event): void {
+    const message = (event as CustomEvent<{ type: string; project: ProjectSnapshot }>).detail;
+    if (message?.type !== 'PIXELFORGE_STATE' || message.project?.format !== 'PixelForgeProject') return;
+    const project = message.project;
+    latestProject = project;
+    if (pendingStateCapture) {
+      const resolve = pendingStateCapture;
+      pendingStateCapture = null;
+      resolve(project);
+    } else {
+      scheduleAutosave(project);
     }
   }
 
+  function handleEditorRestored(): void {
+    recovery = null;
+    saveStatus = 'Recovered · saving locally…';
+    if (latestProject) scheduleAutosave(latestProject);
+  }
+
   function captureCurrentProject(): Promise<ProjectSnapshot> {
-    const frameWindow = editorFrame?.contentWindow;
-    if (!frameWindow) return Promise.reject(new Error('The editor is not ready.'));
     return new Promise((resolve, reject) => {
       const timeout = window.setTimeout(() => {
         pendingStateCapture = null;
@@ -144,7 +145,7 @@
         window.clearTimeout(timeout);
         resolve(project);
       };
-      frameWindow.postMessage({ type: 'PIXELFORGE_REQUEST_STATE' }, window.location.origin);
+      window.postMessage({ type: 'PIXELFORGE_REQUEST_STATE' }, window.location.origin);
     });
   }
 
@@ -206,11 +207,15 @@
     const onControllerChange = () => {
       if (reloadAfterControllerChange) window.location.reload();
     };
-    window.addEventListener('message', handleMessage);
+    window.addEventListener('pixelforge:ready', handleEditorReady);
+    window.addEventListener('pixelforge:state', handleEditorState);
+    window.addEventListener('pixelforge:restored', handleEditorRestored);
     navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);
     void registerServiceWorker().then((cleanup) => { removeUpdateListeners = cleanup; });
     return () => {
-      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('pixelforge:ready', handleEditorReady);
+      window.removeEventListener('pixelforge:state', handleEditorState);
+      window.removeEventListener('pixelforge:restored', handleEditorRestored);
       navigator.serviceWorker?.removeEventListener('controllerchange', onControllerChange);
       removeUpdateListeners?.();
       if (saveTimer) clearTimeout(saveTimer);
@@ -224,8 +229,7 @@
 </svelte:head>
 
 <main class="relative h-dvh min-h-[320px] w-screen overflow-hidden bg-[#17191d]">
-  <iframe bind:this={editorFrame} src="/legacy/index.html" title="PixelForge Studio image editor"
-    class="block h-full w-full border-0 bg-[#17191d]" referrerpolicy="same-origin"></iframe>
+  <EditorWorkbench />
 
   <div class="pointer-events-none fixed bottom-[34px] left-3 z-40 max-w-[calc(100vw-24px)] rounded-lg border border-white/10 bg-[#202329]/95 px-3 py-2 text-[11px] text-slate-300 shadow-xl backdrop-blur"
     role="status" aria-live="polite">
