@@ -9,6 +9,12 @@
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let latestProject: ProjectSnapshot | null = null;
   let database: Promise<IDBDatabase> | null = null;
+  let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
+  let updateAvailable = $state(false);
+  let updateBusy = $state(false);
+  let updateError = $state('');
+  let pendingStateCapture: ((project: ProjectSnapshot) => void) | null = null;
+  let reloadAfterControllerChange = false;
   const DB_NAME = 'pixelforge-studio-local';
   const STORE_NAME = 'snapshots';
 
@@ -110,7 +116,15 @@
       saveStatus = 'Editor ready · local-only storage';
       void checkForRecovery();
     } else if (event.data?.type === 'PIXELFORGE_STATE' && event.data.project?.format === 'PixelForgeProject') {
-      scheduleAutosave(event.data.project as ProjectSnapshot);
+      const project = event.data.project as ProjectSnapshot;
+      latestProject = project;
+      if (pendingStateCapture) {
+        const resolve = pendingStateCapture;
+        pendingStateCapture = null;
+        resolve(project);
+      } else {
+        scheduleAutosave(project);
+      }
     } else if (event.data?.type === 'PIXELFORGE_RESTORED') {
       recovery = null;
       saveStatus = 'Recovered · saving locally…';
@@ -118,11 +132,86 @@
     }
   }
 
+  function captureCurrentProject(): Promise<ProjectSnapshot> {
+    if (!editorFrame?.contentWindow) return Promise.reject(new Error('The editor is not ready.'));
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        pendingStateCapture = null;
+        reject(new Error('The editor did not respond with its latest project state.'));
+      }, 3000);
+      pendingStateCapture = (project) => {
+        window.clearTimeout(timeout);
+        resolve(project);
+      };
+      editorFrame.contentWindow.postMessage({ type: 'PIXELFORGE_REQUEST_STATE' }, window.location.origin);
+    });
+  }
+
+  async function applyAvailableUpdate(): Promise<void> {
+    const waiting = serviceWorkerRegistration?.waiting;
+    if (!waiting) return;
+    updateBusy = true;
+    updateError = '';
+    saveStatus = 'Saving project before update…';
+    try {
+      const project = await captureCurrentProject();
+      if (saveTimer) clearTimeout(saveTimer);
+      latestProject = project;
+      await persistProject(project);
+      saveStatus = 'Project saved · applying update';
+      reloadAfterControllerChange = true;
+      waiting.postMessage({ type: 'SKIP_WAITING' });
+    } catch (error) {
+      updateBusy = false;
+      saveStatus = 'Update paused · project not confirmed saved';
+      updateError = error instanceof Error ? error.message : 'Could not save the current project before updating.';
+    }
+  }
+
+  async function registerServiceWorker(): Promise<(() => void) | undefined> {
+    if (!('serviceWorker' in navigator)) return undefined;
+    try {
+      serviceWorkerRegistration = await navigator.serviceWorker.register('/service-worker.js');
+      const checkForUpdate = () => {
+        if (document.visibilityState === 'visible') {
+          void serviceWorkerRegistration?.update().catch(() => undefined);
+        }
+      };
+      const onUpdateFound = () => {
+        const installing = serviceWorkerRegistration?.installing;
+        installing?.addEventListener('statechange', () => {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            updateAvailable = true;
+          }
+        });
+      };
+      serviceWorkerRegistration.addEventListener('updatefound', onUpdateFound);
+      if (serviceWorkerRegistration.waiting && navigator.serviceWorker.controller) updateAvailable = true;
+      document.addEventListener('visibilitychange', checkForUpdate);
+      checkForUpdate();
+      return () => {
+        serviceWorkerRegistration?.removeEventListener('updatefound', onUpdateFound);
+        document.removeEventListener('visibilitychange', checkForUpdate);
+      };
+    } catch {
+      saveStatus = 'Editor ready · offline updates unavailable';
+      return undefined;
+    }
+  }
+
   function dismissRecovery(): void { recovery = null; }
   onMount(() => {
+    let removeUpdateListeners: (() => void) | undefined;
+    const onControllerChange = () => {
+      if (reloadAfterControllerChange) window.location.reload();
+    };
     window.addEventListener('message', handleMessage);
+    navigator.serviceWorker?.addEventListener('controllerchange', onControllerChange);
+    void registerServiceWorker().then((cleanup) => { removeUpdateListeners = cleanup; });
     return () => {
       window.removeEventListener('message', handleMessage);
+      navigator.serviceWorker?.removeEventListener('controllerchange', onControllerChange);
+      removeUpdateListeners?.();
       if (saveTimer) clearTimeout(saveTimer);
     };
   });
@@ -158,7 +247,26 @@
     </section>
   {/if}
 
+  {#if updateAvailable}
+    <section class="fixed right-3 top-3 z-50 w-[min(390px,calc(100vw-24px))] rounded-xl border border-blue-300/20 bg-[#202733] p-3 text-slate-100 shadow-2xl" aria-labelledby="update-title">
+      <div class="flex items-start gap-3">
+        <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-400/15 text-blue-200" aria-hidden="true">↑</span>
+        <div class="min-w-0 flex-1">
+          <h2 id="update-title" class="text-sm font-semibold">PixelForge update available</h2>
+          <p class="mt-1 text-xs leading-5 text-slate-300">Save your current project locally before refreshing to the latest version.</p>
+          {#if updateError}<p class="mt-2 text-xs text-amber-200">{updateError}</p>{/if}
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button class="min-h-10 rounded-lg bg-blue-500 px-3 text-xs font-semibold text-white transition hover:bg-blue-400 disabled:opacity-60" onclick={applyAvailableUpdate} disabled={updateBusy}>
+              {updateBusy ? 'Saving and updating…' : 'Save and update'}
+            </button>
+            <button class="min-h-10 rounded-lg border border-white/15 px-3 text-xs text-slate-200 hover:bg-white/5" onclick={() => updateAvailable = false} disabled={updateBusy}>Later</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  {/if}
+
   {#if recoveryError}
-    <div class="fixed bottom-16 left-3 z-50 max-w-[min(420px,calc(100vw-24px))] rounded-lg border border-amber-300/20 bg-[#332b20] px-3 py-2 text-xs leading-5 text-amber-100 shadow-xl">{recoveryError}</div>
+    <div class="fixed bottom-16 left-3 z-40 max-w-[min(420px,calc(100vw-24px))] rounded-lg border border-amber-300/20 bg-[#332b20] px-3 py-2 text-xs leading-5 text-amber-100 shadow-xl">{recoveryError}</div>
   {/if}
 </main>
