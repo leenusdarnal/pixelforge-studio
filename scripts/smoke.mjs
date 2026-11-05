@@ -26,6 +26,7 @@ assert.match(engine, /PIXELFORGE_REQUEST_STATE/);
 assert.match(workbench, /@html editorMarkup/);
 assert.match(workbench, /mountEditor/);
 assert.match(engine, /isAllowedDocumentSize/);
+assert.match(engine, /fitWithinDocumentLimit/);
 assert.match(engine, /maxHistoryBytes/);
 assert.match(css, /@import "tailwindcss"/);
 const worker = readFileSync('src/service-worker.ts', 'utf8');
