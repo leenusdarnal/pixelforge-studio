@@ -9,6 +9,9 @@
 - Added a 24 MP document target and proportional image import scaling.
 - Added a bounded snapshot-history estimate.
 - Added a versioned SvelteKit service worker and offline app-shell cache.
+- Added basic editable text layers with font family, size, weight, colour, alignment, line spacing and opacity.
+- Preserved text-layer metadata in local autosaves and .pfs project snapshots.
+- Added a layer action to reopen and edit saved text content.
 - Added CI checks, 24 MP tests and smoke checks.
 - Updated PWA metadata and project documentation.
 - Added the MIT licence.
