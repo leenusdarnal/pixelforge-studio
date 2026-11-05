@@ -2,6 +2,8 @@
 // The existing editor engine is being migrated incrementally from JavaScript to typed feature modules.
 /** Transitional editing runtime. Feature-level decomposition follows in later migration slices. */
 import { isAllowedDocumentSize, fitWithinDocumentLimit } from "./limits";
+import { PROJECT_FORMAT, PROJECT_VERSION } from "./project";
+import { estimateSnapshotBytes, MAX_HISTORY_BYTES, MAX_HISTORY_ENTRIES } from "./history.js";
 
 let editorMounted = false;
 export function mountEditor(): void {
@@ -14,9 +16,9 @@ const display = $('displayCanvas'), overlay = $('overlayCanvas'), stage = $('sta
 const dctx = display.getContext('2d'), octx = overlay.getContext('2d');
 let docW=1200, docH=800, zoom=.7, layers=[], activeId=null, tool='move', pointerStart=null, isDrawing=false, currentPath=[], selection=null, cropRect=null, moveBuffer=null, gridOn=false, docName='Untitled design', clipboardCanvas=null, clipboardX=0, clipboardY=0, draggingLayerId=null, moveMaskBuffer=null, pendingTextPosition=null, editingTextLayerId=null;
 let history=[], redoStack=[], historyLabels=[], historyIndex=-1, lastAction='New document', drawingSnapshot=null, historyBytes=0;
-const maxHistoryBytes=150*1024*1024;
+
 const activeTouchPoints=new Map();let pinchGesture=null;
-const maxHistory=24;
+
 const toolNames={move:'Move tool',marquee:'Rectangular marquee',lasso:'Freehand lasso',crop:'Crop tool',brush:'Brush tool',pencil:'Pencil tool',eraser:'Eraser tool',fill:'Fill tool',eyedropper:'Eyedropper tool',text:'Type tool',rectangle:'Rectangle tool',ellipse:'Ellipse tool',line:'Line tool',hand:'Hand tool',zoom:'Zoom tool'};
 const toolKeys={v:'move',m:'marquee',l:'lasso',c:'crop',b:'brush',p:'pencil',e:'eraser',g:'fill',i:'eyedropper',t:'text',u:'rectangle',o:'ellipse',h:'hand',z:'zoom'};
 const uid=()=>Math.random().toString(36).slice(2,10);
@@ -74,11 +76,11 @@ function updateTool(){document.querySelectorAll('.tool[data-tool]').forEach(b=>b
 function setTool(t){tool=t;updateTool()}
 function point(e){const r=stage.getBoundingClientRect();return{x:Math.max(0,Math.min(docW,(e.clientX-r.left)/zoom)),y:Math.max(0,Math.min(docH,(e.clientY-r.top)/zoom))}}
 function snap(){return {w:docW,h:docH,name:docName,activeId,layers:layers.map(l=>({id:l.id,name:l.name,type:l.type,visible:l.visible,opacity:l.opacity,blend:l.blend,locked:l.locked,textData:l.textData?{...l.textData}:null,editMask:false,data:l.canvas.toDataURL('image/png'),maskData:l.mask?l.mask.toDataURL('image/png'):null}))}}
-function estimateSnapshotBytes(state){return state.layers.reduce((total,layer)=>total+((layer.data?.length||0)+(layer.maskData?.length||0))*0.75,0)}
-function publishParentState(){const payload={type:'PIXELFORGE_STATE',project:{format:'PixelForgeProject',version:3,...snap()}};try{if(window.parent!==window)window.parent.postMessage(payload,location.origin);else window.dispatchEvent(new CustomEvent('pixelforge:state',{detail:payload}))}catch(error){showToast('Local recovery could not capture this edit')}}
+
+function publishParentState(){const payload={type:'PIXELFORGE_STATE',project:{format:PROJECT_FORMAT,version:PROJECT_VERSION,...snap()}};try{if(window.parent!==window)window.parent.postMessage(payload,location.origin);else window.dispatchEvent(new CustomEvent('pixelforge:state',{detail:payload}))}catch(error){showToast('Local recovery could not capture this edit')}}
 let parentSaveTimer;
 function scheduleParentSave(){clearTimeout(parentSaveTimer);parentSaveTimer=setTimeout(publishParentState,280)}
-function commit(label='Edit'){history=history.slice(0,historyIndex+1);historyLabels=historyLabels.slice(0,historyIndex+1);historyBytes=history.reduce((total,state)=>total+estimateSnapshotBytes(state),0);const state=snap();history.push(state);historyBytes+=estimateSnapshotBytes(state);historyLabels.push(label.replace(/^Before /,''));while(history.length>1&&(history.length>maxHistory||historyBytes>maxHistoryBytes)){const removed=history.shift();historyBytes=Math.max(0,historyBytes-estimateSnapshotBytes(removed));historyLabels.shift();historyIndex=Math.max(0,historyIndex-1)}historyIndex=history.length-1;redoStack=[];lastAction=label;updateHistoryUI();$('saveState').textContent='Unsaved changes';scheduleParentSave()}
+function commit(label='Edit'){history=history.slice(0,historyIndex+1);historyLabels=historyLabels.slice(0,historyIndex+1);historyBytes=history.reduce((total,state)=>total+estimateSnapshotBytes(state),0);const state=snap();history.push(state);historyBytes+=estimateSnapshotBytes(state);historyLabels.push(label.replace(/^Before /,''));while(history.length>1&&(history.length>MAX_HISTORY_ENTRIES||historyBytes>MAX_HISTORY_BYTES)){const removed=history.shift();historyBytes=Math.max(0,historyBytes-estimateSnapshotBytes(removed));historyLabels.shift();historyIndex=Math.max(0,historyIndex-1)}historyIndex=history.length-1;redoStack=[];lastAction=label;updateHistoryUI();$('saveState').textContent='Unsaved changes';scheduleParentSave()}
 async function loadCanvasData(data,w,h){const c=document.createElement('canvas');c.width=w;c.height=h;if(data){const ctx=c.getContext('2d');await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{ctx.drawImage(im,0,0,w,h);resolve()};im.onerror=reject;im.src=data})}return c}
 async function restore(s){if(!isAllowedDocumentSize(s.w,s.h))throw Error('Document exceeds 24 MP');docW=s.w;docH=s.h;docName=s.name||'Untitled design';layers=[];for(const obj of s.layers){const c=await loadCanvasData(obj.data,docW,docH);const mask=obj.maskData?await loadCanvasData(obj.maskData,docW,docH):null;layers.push({...obj,canvas:c,mask,editMask:false,_maskComposite:null,_maskCompositeDirty:true})}activeId=layers.some(l=>l.id===s.activeId)?s.activeId:(layers.at(-1)?.id||null);selection=null;cropRect=null;resizeCanvases();render();updateHistoryUI()}
 function updateHistoryUI(){
