@@ -36,7 +36,7 @@ The GitHub repository is connected to Vercel. Push or merge to main to trigger a
 
 ## Existing editor migration
 
-The editor now renders directly in SvelteKit through `src/lib/editor/EditorWorkbench.svelte`; it no longer runs in an iframe. Presentation markup, styles, project contracts, IndexedDB recovery storage and history-budget logic are separated into modules. Autosave/recovery communicate through same-window events. The canvas editing runtime is still a transitional consolidated module; layer, tool, filter and rendering internals will be split into smaller feature modules in subsequent migration slices. The previous iframe page remains in `static/legacy/` temporarily as a rollback reference and is not loaded by the application.
+The editor now renders directly in SvelteKit through `src/lib/editor/EditorWorkbench.svelte`; it no longer runs in an iframe. Presentation markup, styles, project contracts, IndexedDB recovery storage, history-budget logic and canvas mask-compositing primitives are separated into modules. Autosave/recovery communicate through same-window events. The canvas editing runtime is still a transitional consolidated module; layer, tool, filter and rendering internals will be split into smaller feature modules in subsequent migration slices. The previous iframe page remains in `static/legacy/` temporarily as a rollback reference and is not loaded by the application.
 
 ## Text layers
 
