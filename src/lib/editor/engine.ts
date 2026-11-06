@@ -4,6 +4,7 @@
 import { isAllowedDocumentSize, fitWithinDocumentLimit } from "./limits";
 import { PROJECT_FORMAT, PROJECT_VERSION } from "./project";
 import { estimateSnapshotBytes, MAX_HISTORY_BYTES, MAX_HISTORY_ENTRIES } from "./history.js";
+import { invalidateCanvasComposite, getRenderedLayerCanvas, getPaintTarget } from "./canvasRenderer.js";
 
 let editorMounted = false;
 export function mountEditor(): void {
@@ -27,9 +28,9 @@ function makeLayer(name='Layer',type='pixel') {const c=document.createElement('c
 function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('show'),2100)}
 function updateTitle(){ $('docTitle').textContent=docName; $('docDimensions').textContent=`${docW} × ${docH} px`; }
 function resizeCanvases(){display.width=overlay.width=docW;display.height=overlay.height=docH;stage.style.width=(docW*zoom)+'px';stage.style.height=(docH*zoom)+'px';layers.forEach(l=>{if(l.canvas.width!==docW||l.canvas.height!==docH){const c=document.createElement('canvas');c.width=docW;c.height=docH;c.getContext('2d').drawImage(l.canvas,0,0);l.canvas=c}if(l.mask&&(l.mask.width!==docW||l.mask.height!==docH)){const m=document.createElement('canvas');m.width=docW;m.height=docH;m.getContext('2d').drawImage(l.mask,0,0);l.mask=m}invalidateLayerComposite(l)});render()}
-function invalidateLayerComposite(layer){if(layer)layer._maskCompositeDirty=true}
-function renderedLayerCanvas(layer){if(!layer.mask)return layer.canvas;if(!layer._maskComposite||layer._maskComposite.width!==docW||layer._maskComposite.height!==docH){layer._maskComposite=document.createElement('canvas');layer._maskComposite.width=docW;layer._maskComposite.height=docH;layer._maskCompositeDirty=true}if(layer._maskCompositeDirty){const x=layer._maskComposite.getContext('2d');x.clearRect(0,0,docW,docH);x.globalCompositeOperation='source-over';x.drawImage(layer.canvas,0,0);x.globalCompositeOperation='destination-in';x.drawImage(layer.mask,0,0);x.globalCompositeOperation='source-over';layer._maskCompositeDirty=false}return layer._maskComposite}
-function paintTarget(layer){return layer&&layer.editMask&&layer.mask?layer.mask:layer?.canvas}
+function invalidateLayerComposite(layer){invalidateCanvasComposite(layer)}
+function renderedLayerCanvas(layer){return getRenderedLayerCanvas(layer,docW,docH)}
+function paintTarget(layer){return getPaintTarget(layer)}
 function maskPaintOperation(layer,toolName){if(toolName==='eraser')return'destination-out';if(layer?.editMask&&layer.mask){const hex=$('fgColor').value;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(.299*r+.587*g+.114*b)<128?'destination-out':'source-over'}return'source-over'}
 function addLayerMask(){const l=activeLayer();if(!l)return;if(l.locked){showToast('Unlock this layer before creating a mask');return}if(l.mask){l.editMask=true;renderLayers();showToast('Mask editing selected');return}commit('Before add layer mask');const m=document.createElement('canvas');m.width=docW;m.height=docH;const x=m.getContext('2d');x.fillStyle='#fff';if(selection){x.save();applySelectionClip(x);x.fillRect(0,0,docW,docH);x.restore()}else{x.fillRect(0,0,docW,docH)}l.mask=m;l.editMask=true;invalidateLayerComposite(l);render();updateTool();showToast(selection?'Mask created: selected area revealed':'White layer mask added')}
 function hideSelectionWithMask(){const l=activeLayer();if(!l)return;if(!selection){showToast('Create a selection first');return}if(l.locked){showToast('Unlock this layer first');return}commit('Before hide selection on mask');if(!l.mask){l.mask=document.createElement('canvas');l.mask.width=docW;l.mask.height=docH;const base=l.mask.getContext('2d');base.fillStyle='#fff';base.fillRect(0,0,docW,docH)}const mctx=l.mask.getContext('2d');mctx.save();applySelectionClip(mctx);mctx.clearRect(0,0,docW,docH);mctx.restore();l.editMask=true;invalidateLayerComposite(l);render();updateTool();showToast('Selected area hidden by mask')}
