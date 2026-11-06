@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.0 — Canvas rendering primitives
+
+- Extracted layer-mask compositing, composite-cache invalidation and paint-target selection into a dedicated canvas renderer module.
+- Preserved cached mask compositing and dimension-aware cache recreation.
+- Added isolated unit tests for masked and unmasked layers, cache reuse, invalidation, resizing and mask-editing targets.
+- Updated smoke checks and project documentation for the rendering module.
+
+
 ## 2.4.0 — Direct SvelteKit editor integration
 
 - Removed the active iframe dependency and mounted the editor directly in the SvelteKit route.
