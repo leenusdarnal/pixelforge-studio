@@ -4,6 +4,12 @@ const DB_NAME = 'pixelforge-studio-local';
 const STORE_NAME = 'snapshots';
 let database: Promise<IDBDatabase> | null = null;
 
+export type RecoveryOverview = {
+  current: RecoveryRecord | null;
+  backupCount: number;
+  latestSavedAt: number | null;
+};
+
 function openDatabase(): Promise<IDBDatabase> {
   if (database) return database;
   database = new Promise((resolve, reject) => {
@@ -14,9 +20,22 @@ function openDatabase(): Promise<IDBDatabase> {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
       }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error('Could not open local storage.'));
-    request.onblocked = () => reject(new Error('Local storage upgrade is blocked by another tab.'));
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => {
+        db.close();
+        database = null;
+      };
+      resolve(db);
+    };
+    request.onerror = () => {
+      database = null;
+      reject(request.error ?? new Error('Could not open local storage.'));
+    };
+    request.onblocked = () => {
+      database = null;
+      reject(new Error('Local storage upgrade is blocked by another tab.'));
+    };
   });
   return database;
 }
@@ -42,6 +61,37 @@ export async function getCurrentRecovery(): Promise<RecoveryRecord | null> {
   const transaction = db.transaction(STORE_NAME, 'readonly');
   const record = await requestResult(transaction.objectStore(STORE_NAME).get('current')) as RecoveryRecord | undefined;
   return record ?? null;
+}
+
+/** Return a small, non-sensitive summary of the IndexedDB recovery records. */
+export async function getRecoveryOverview(): Promise<RecoveryOverview> {
+  const db = await openDatabase();
+  const transaction = db.transaction(STORE_NAME, 'readonly');
+  const done = transactionComplete(transaction);
+  const records = await requestResult(transaction.objectStore(STORE_NAME).getAll()) as RecoveryRecord[];
+  await done;
+
+  const current = records.find((record) => record.id === 'current') ?? null;
+  const backups = records.filter((record) => record.id.startsWith('backup-'));
+  const latestSavedAt = records.reduce<number | null>(
+    (latest, record) => latest === null ? record.savedAt : Math.max(latest, record.savedAt),
+    null
+  );
+
+  return {
+    current,
+    backupCount: backups.length,
+    latestSavedAt
+  };
+}
+
+/** Clear only PixelForge project recovery snapshots; the installed app cache is untouched. */
+export async function clearRecoveryData(): Promise<void> {
+  const db = await openDatabase();
+  const transaction = db.transaction(STORE_NAME, 'readwrite');
+  const done = transactionComplete(transaction);
+  transaction.objectStore(STORE_NAME).clear();
+  await done;
 }
 
 /** Save the current project and retain the three newest recovery copies. */
