@@ -1,0 +1,46 @@
+name: Prepare npm lockfile
+
+on:
+  push:
+    branches:
+      - chore/resolve-package-lock
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-lockfile-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  create-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout lockfile preparation branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Generate package-lock.json without running lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Open a reviewable lockfile pull request
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
+        with:
+          token: ${{ github.token }}
+          base: main
+          branch: chore/commit-npm-lockfile
+          delete-branch: true
+          add-paths: |
+            package-lock.json
+            .github/workflows/ci.yml
+          commit-message: "build: commit npm dependency lockfile"
+          title: "Build: commit reproducible npm lockfile"
+          body: |
+            Generate package-lock.json from package.json using Node.js 22 and update CI to prefer npm ci when the lockfile is present. Review the resolved dependency tree and wait for CI before merging. Application code and package.json are unchanged.
