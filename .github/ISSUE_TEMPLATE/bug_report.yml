@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible problem in PixelForge Studio.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach original images, PFS project files, screenshots containing private information or local backups. Describe the issue with a small fictional example where possible.
+        Never include passwords, tokens, personal records or information belonging to another person.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the actual result and the expected result.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use fictional or non-sensitive data.
+      placeholder: |
+        1. Open the application.
+        2. Perform an action.
+        3. Observe the problem.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, version and operating system
+      placeholder: e.g. Chrome 130, Android 14
+    validations:
+      required: false
+  - type: textarea
+    id: errors
+    attributes:
+      label: Error details
+      description: Redact identifiers and secrets. Do not attach original files or backups.
+    validations:
+      required: false
