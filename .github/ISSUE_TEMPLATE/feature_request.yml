@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest an improvement to PixelForge Studio.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What user problem should this solve?
+      description: Describe the need or workflow that is difficult today.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Desired outcome
+      description: Explain what would make the workflow better.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
