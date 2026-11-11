@@ -1,11 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import EditorWorkbench from '$lib/editor/EditorWorkbench.svelte';
-  import { getCurrentRecovery, persistProject } from '$lib/editor/storage';
+  import { clearRecoveryData, getRecoveryOverview, persistProject, type RecoveryOverview } from '$lib/editor/storage';
   import { isProjectSnapshot, type ProjectSnapshot, type RecoveryRecord } from '$lib/editor/project';
   let saveStatus = $state('Starting editor…');
   let recovery = $state<RecoveryRecord | null>(null);
   let recoveryError = $state('');
+  let recoveryOverview = $state<RecoveryOverview>({ current: null, backupCount: 0, latestSavedAt: null });
+  let localDataOpen = $state(false);
+  let clearingRecovery = $state(false);
+  let localDataMessage = $state('');
+  let isClearingRecovery = false;
+  let changedDuringClear = false;
+  let storageQueue: Promise<void> = Promise.resolve();
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let latestProject: ProjectSnapshot | null = null;
   let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
@@ -15,35 +22,92 @@
   let pendingStateCapture: ((project: ProjectSnapshot) => void) | null = null;
   let reloadAfterControllerChange = false;
 
+  function queueStorageTask<T>(operation: () => Promise<T>): Promise<T> {
+    const task = storageQueue.then(operation, operation);
+    storageQueue = task.then(() => undefined, () => undefined);
+    return task;
+  }
+
+  async function refreshRecoveryOverview(): Promise<void> {
+    try {
+      recoveryOverview = await getRecoveryOverview();
+      localDataMessage = '';
+    } catch {
+      localDataMessage = 'Recovery details are unavailable in this browser.';
+    }
+  }
+
   function scheduleAutosave(project: ProjectSnapshot): void {
     latestProject = project;
     saveStatus = 'Unsaved changes';
+    if (isClearingRecovery) {
+      changedDuringClear = true;
+      return;
+    }
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      if (!latestProject) return;
-      try {
-        await persistProject(latestProject);
-        saveStatus = 'Saved locally · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        recoveryError = '';
-      } catch (error) {
-        saveStatus = 'Local save unavailable';
-        recoveryError = error instanceof Error && /quota/i.test(error.name + error.message)
-          ? 'Browser storage is full. Export a .pfs project to keep a separate copy.'
-          : 'The browser could not save this project. Export a .pfs project as a backup.';
-      }
+    saveTimer = setTimeout(() => {
+      saveTimer = undefined;
+      if (!latestProject || isClearingRecovery) return;
+      const snapshot = latestProject;
+      void queueStorageTask(() => persistProject(snapshot))
+        .then(() => {
+          saveStatus = 'Saved locally · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          recoveryError = '';
+          void refreshRecoveryOverview();
+        })
+        .catch((error) => {
+          saveStatus = 'Local save unavailable';
+          recoveryError = error instanceof Error && /quota/i.test(error.name + error.message)
+            ? 'Browser storage is full. Export a .pfs project to keep a separate copy.'
+            : 'The browser could not save this project. Export a .pfs project as a backup.';
+        });
     }, 2500);
   }
 
   async function checkForRecovery(): Promise<void> {
     try {
-      const saved = await getCurrentRecovery();
-      if (isProjectSnapshot(saved?.project)) {
-        recovery = saved;
+      const overview = await getRecoveryOverview();
+      recoveryOverview = overview;
+      if (isProjectSnapshot(overview.current?.project)) {
+        recovery = overview.current;
         saveStatus = 'A local recovery is available';
       }
     } catch {
       saveStatus = 'Local storage unavailable';
       recoveryError = 'This browser could not open local recovery storage.';
+      localDataMessage = 'Recovery details are unavailable in this browser.';
+    }
+  }
+
+  async function clearSavedRecovery(): Promise<void> {
+    const confirmed = window.confirm(
+      'Clear the latest autosave and all retained recovery copies from this browser? The canvas currently open will remain in memory, but saved recovery cannot be restored after deletion. Export a .pfs project first if you need a separate copy.'
+    );
+    if (!confirmed) return;
+
+    clearingRecovery = true;
+    isClearingRecovery = true;
+    changedDuringClear = false;
+    localDataMessage = '';
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = undefined;
+
+    try {
+      await queueStorageTask(() => clearRecoveryData());
+      recovery = null;
+      recoveryOverview = await getRecoveryOverview();
+      recoveryError = '';
+      saveStatus = 'Saved recovery cleared · current canvas remains open';
+      localDataMessage = 'Saved autosave and recovery copies were removed. The open canvas and offline app files were not changed.';
+    } catch {
+      localDataMessage = 'The browser could not clear local recovery. Your existing saved copies were not intentionally changed.';
+    } finally {
+      clearingRecovery = false;
+      isClearingRecovery = false;
+      if (changedDuringClear && latestProject) {
+        changedDuringClear = false;
+        scheduleAutosave(latestProject);
+      }
     }
   }
 
@@ -102,7 +166,7 @@
       const project = await captureCurrentProject();
       if (saveTimer) clearTimeout(saveTimer);
       latestProject = project;
-      await persistProject(project);
+      await queueStorageTask(() => persistProject(project));
       saveStatus = 'Project saved · applying update';
       reloadAfterControllerChange = true;
       waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -178,6 +242,39 @@
     role="status" aria-live="polite">
     <span class="mr-2 inline-block size-2 rounded-full bg-emerald-400" aria-hidden="true"></span>{saveStatus}
   </div>
+  <button
+    type="button"
+    class="fixed bottom-[82px] right-3 z-40 min-h-10 rounded-lg border border-white/15 bg-[#202329]/95 px-3 text-xs font-semibold text-slate-100 shadow-xl backdrop-blur hover:bg-[#2a3039] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
+    aria-expanded={localDataOpen}
+    aria-controls="local-data-panel"
+    onclick={() => { localDataOpen = !localDataOpen; if (localDataOpen) void refreshRecoveryOverview(); }}
+  >Manage local recovery</button>
+
+  {#if localDataOpen}
+    <section id="local-data-panel" class="fixed bottom-[130px] right-3 z-50 w-[min(360px,calc(100vw-24px))] rounded-xl border border-white/15 bg-[#202733] p-4 text-slate-100 shadow-2xl" aria-labelledby="local-data-title">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="local-data-title" class="text-sm font-semibold">Local recovery data</h2>
+        <button type="button" class="min-h-9 rounded-lg px-2 text-xs text-slate-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-blue-300" onclick={() => localDataOpen = false}>Close</button>
+      </div>
+      <p class="mt-2 text-xs leading-5 text-slate-300">PixelForge keeps project recovery snapshots in IndexedDB on this device. They are not uploaded to a PixelForge account or cloud sync.</p>
+      <dl class="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-black/20 p-3 text-xs">
+        <dt class="text-slate-400">Latest autosave</dt>
+        <dd class="text-right font-medium">{recoveryOverview.current ? new Date(recoveryOverview.current.savedAt).toLocaleString() : 'None found'}</dd>
+        <dt class="text-slate-400">Recovery copies</dt>
+        <dd class="text-right font-medium">{recoveryOverview.backupCount}</dd>
+      </dl>
+      {#if localDataMessage}
+        <p class="mt-3 text-xs leading-5 text-slate-300" role="status" aria-live="polite">{localDataMessage}</p>
+      {/if}
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button type="button" class="min-h-10 rounded-lg border border-white/15 px-3 text-xs text-slate-200 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-blue-300" onclick={refreshRecoveryOverview} disabled={clearingRecovery}>Refresh</button>
+        <button type="button" class="min-h-10 rounded-lg border border-red-300/30 bg-red-500/10 px-3 text-xs font-semibold text-red-100 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-red-200" onclick={clearSavedRecovery} disabled={clearingRecovery || (!recoveryOverview.current && recoveryOverview.backupCount === 0)}>
+          {clearingRecovery ? 'Clearing…' : 'Clear saved recovery'}
+        </button>
+      </div>
+      <p class="mt-3 text-[11px] leading-5 text-slate-400">Clearing removes the latest autosave and retained recovery copies only. The canvas currently open and the offline app cache are unaffected. Export a .pfs project before clearing anything you may need again. New edits will create fresh recovery data.</p>
+    </section>
+  {/if}
 
   {#if recovery}
     <section class="fixed left-1/2 top-14 z-50 w-[min(440px,calc(100vw-24px))] -translate-x-1/2 rounded-xl border border-blue-300/20 bg-[#202733] p-4 text-slate-100 shadow-2xl" aria-labelledby="recovery-title">
