@@ -26,12 +26,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+        run: npm ci --no-audit --no-fund
       - name: Svelte and TypeScript checks
         run: npm run check
       - name: Unit tests

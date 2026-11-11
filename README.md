@@ -18,7 +18,7 @@ PixelForge is an open-source project under the **MIT License**. It runs in the b
 
 Requirements: Node.js 20 or newer and npm.
 
-    npm install
+    npm ci
     npm run dev
 
 ## Checks
