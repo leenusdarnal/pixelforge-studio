@@ -49,6 +49,9 @@ Text layers support basic editable metadata: content, font family, size, weight,
 - No account or cloud sync is required.
 - Browser storage can be cleared by the user or removed by the browser. Export a .pfs file for a separate backup.
 - Browser storage quotas vary by device.
+- Use **Manage local recovery** in the editor to see whether an autosave exists and how many recovery copies are retained.
+- The same panel can clear the latest autosave and retained copies after an explicit confirmation. Clearing recovery does not close or erase the canvas currently open, and it does not remove the offline app-shell cache. New edits create fresh recovery snapshots.
+- Export an editable `.pfs` project before clearing recovery data that you may need. Deletion of recovery snapshots cannot be undone.
 
 ## Image size target
 
